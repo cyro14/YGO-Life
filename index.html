@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duelist Life - O Rei dos Jogos</title>
+    <!-- html2canvas para gerar a imagem final -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap');
+
+        :root { --bg-dark: #121212; --panel-bg: #1e1e1e; --gold: #d4af37; --text-light: #ffffff; --danger: #e74c3c; --success: #2ecc71; }
+        
+        body { margin: 0; padding: 0; background-color: var(--bg-dark); color: var(--text-light); font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        #game-container { width: 100%; max-width: 600px; background-color: #000; height: 100vh; max-height: 850px; position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+
+        /* HUD Superior */
+        #hud { display: none; background: #2c3e50; padding: 10px; border-bottom: 2px solid var(--gold); font-size: 14px; font-weight: bold; flex-wrap: wrap; justify-content: space-between; z-index: 10; color: #fff; }
+        #hud span { margin: 5px; text-shadow: 1px 1px 2px #000; }
+        .hud-hp { color: #ff6b81; } .hud-dp { color: #f1c40f; } .hud-atk { color: #ff4757; } .hud-int { color: #7bed9f; }
+
+        /* Cenário / Imagem Principal */
+        #stage { flex-grow: 1; background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); background-size: cover; background-position: center; display: none; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+        #stage-image { height: 60%; max-height: 250px; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); transition: 0.3s; }
+        #stage-overlay { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 5px; color: var(--gold); font-weight: bold; font-size: 12px; border: 1px solid var(--gold); }
+
+        /* Caixa de Diálogo Visual Novel */
+        #dialog-box { display: none; background: rgba(10, 10, 10, 0.95); border-top: 3px solid var(--gold); padding: 20px; min-height: 120px; font-size: 16px; line-height: 1.5; z-index: 10; color: #ffffff; text-shadow: 1px 1px 2px #000; }
+
+        /* Painel de Botões */
+        #action-panel { display: none; background: #111; padding: 10px; gap: 10px; flex-direction: column; z-index: 10; border-top: 1px solid #333; }
+        button { padding: 15px; font-size: 16px; font-weight: bold; border: 2px solid #555; background: #222; color: #ffffff; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        button:hover { background: #444; border-color: var(--gold); }
+        button.btn-primary { background: #2980b9; border-color: #3498db; }
+        button.btn-danger { background: #c0392b; border-color: #e74c3c; }
+
+        /* Telas (Criação e Licença) */
+        .screen { padding: 20px; display: flex; flex-direction: column; overflow-y: auto; height: 100%; box-sizing: border-box; background: var(--bg-dark); }
+        h1, h2 { color: var(--gold); text-align: center; text-transform: uppercase; font-family: 'Press Start 2P', cursive; font-size: 18px; line-height: 1.4; }
+        
+        .form-group { margin-bottom: 20px; background: #1e1e1e; padding: 15px; border-radius: 8px; border: 1px solid #333; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 10px; color: #ddd; }
+        input[type="text"] { width: 100%; padding: 10px; border: 1px solid #555; background: #111; color: #fff; font-size: 16px; border-radius: 5px; box-sizing: border-box; font-weight: bold; }
+        select { width: 100%; padding: 10px; background: #111; color: #fff; border: 1px solid #555; font-size: 16px; border-radius: 5px; }
+
+        /* ID Card Final */
+        #id-card { background: linear-gradient(135deg, #111, #2c3e50); border: 4px solid var(--gold); border-radius: 10px; padding: 20px; margin: 20px 0; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 20px rgba(212, 175, 55, 0.4); color: #fff; }
+        .id-title { font-size: 20px; color: var(--gold); font-weight: 900; letter-spacing: 2px; margin-bottom: 15px; text-transform: uppercase; text-shadow: 2px 2px 4px #000; }
+        .id-stats { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; }
+        .id-stats div { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 4px; border-left: 3px solid var(--gold); }
+        .id-rank { margin-top: 20px; font-size: 18px; font-weight: bold; color: #fff; text-align: center; background: var(--danger); padding: 10px; width: 100%; border-radius: 5px; box-sizing: border-box; }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    
+    <!-- TELA 1: CRIAÇÃO DO DUELISTA -->
+    <div id="screen-creation" class="screen">
+        <h1>Duelist Life</h1>
+        <p style="text-align: center; color: #ccc; font-size: 14px;">A Jornada do Rei dos Jogos</p>
+        
+        <div class="form-group">
+            <label>Seu Nome:</label>
+            <input type="text" id="playerName" placeholder="Ex: Cyro" value="Cyro">
+        </div>
+        <div class="form-group">
+            <label>Nome do Deck (Arquétipo):</label>
+            <input type="text" id="deckName" placeholder="Ex: Máquinas de Luz" value="Máquinas de Luz">
+        </div>
+        <div class="form-group">
+            <label>Estilo de Jogo:</label>
+            <select id="playerType">
+                <option value="maquina">Máquina/Dragão (+ Força, - Tática)</option>
+                <option value="mago">Mago/Fada (+ Tática, - Força)</option>
+                <option value="guerreiro">Guerreiro/Zumbi (Equilibrado + HP)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Aliado da Run:</label>
+            <select id="playerFriend">
+                <option value="joey">Joey Wheeler (1 Vida Extra Secreta)</option>
+                <option value="jaden">Jaden Yuki (Mais Dinheiro nas vitórias)</option>
+                <option value="yusei">Yusei Fudo (Bônus em Testes de Estratégia)</option>
+            </select>
+        </div>
+        
+        <button class="btn-primary" onclick="startGame()">Iniciar Carreira</button>
+    </div>
+
+    <!-- HUD DO JOGO -->
+    <div id="hud">
+        <span class="hud-hp">❤️ HP: <span id="v-hp">3</span></span>
+        <span class="hud-dp">🪙 DP: <span id="v-dp">0</span></span>
+        <span class="hud-atk">⚔️ ATK: <span id="v-atk">0</span></span>
+        <span class="hud-int">🧠 INT: <span id="v-int">0</span></span>
+    </div>
+
+    <!-- ÁREA VISUAL -->
+    <div id="stage">
+        <div id="stage-overlay">Ano 1 - Semana 1</div>
+        <img id="stage-image" src="" alt="Scene">
+    </div>
+
+    <!-- CAIXA DE TEXTO -->
+    <div id="dialog-box"></div>
+
+    <!-- PAINEL DE BOTÕES -->
+    <div id="action-panel"></div>
+
+    <!-- TELA FINAL -->
+    <div id="screen-ending" class="screen" style="display: none;">
+        <h2>Fim de Jogo</h2>
+        <div id="id-card">
+            <div class="id-title">Licença de Duelista</div>
+            <div class="id-stats">
+                <div>👤 Duelista: <span id="id-name"></span></div>
+                <div>🎴 Deck: <span id="id-deck"></span></div>
+                <div>⚔️ ATK: <span id="id-atk"></span></div>
+                <div>🧠 INT: <span id="id-int"></span></div>
+                <div>🤝 Aliado: <span id="id-friend"></span></div>
+                <div>🎓 Status: <span id="id-year"></span></div>
+            </div>
+            <div class="id-rank" id="id-rank-title">Eliminado</div>
+        </div>
+        <p style="font-size: 13px; color: #ccc; text-align: center; margin-bottom: 20px;">Use o botão abaixo para baixar sua carteirinha!</p>
+        <button class="btn-primary" onclick="baixarLicenca()">Baixar Imagem da Carreira</button>
+        <button onclick="location.reload()" style="margin-top: 10px;">Tentar Outra Vez</button>
+    </div>
+
+</div>
+
+<script>
+    let player = {
+        name: "", deck: "", type: "", friend: "",
+        hp: 3, maxHp: 3, dp: 0, atk: 0, int: 0,
+        year: 1, week: 1, savedByJoey: false
+    };
+
+    const imgs = {
+        hub: "https://images.ygoprodeck.com/images/cards/24094653.jpg",
+        study: "https://images.ygoprodeck.com/images/cards/38033121.jpg",
+        duel: "https://images.ygoprodeck.com/images/cards/46986414.jpg",
+        shop: "https://images.ygoprodeck.com/images/cards/55144522.jpg",
+        boss1: "https://images.ygoprodeck.com/images/cards/11111111.jpg", 
+        boss2: "https://images.ygoprodeck.com/images/cards/70095154.jpg",
+        vr: "https://images.ygoprodeck.com/images/cards/89631139.jpg",
+        pro: "https://images.ygoprodeck.com/images/cards/83764718.jpg",
+        threat: "https://images.ygoprodeck.com/images/cards/70781052.jpg" // Imagem para eventos ruins
+    };
+
+    const ui = {
+        creation: document.getElementById('screen-creation'), hud: document.getElementById('hud'),
+        stage: document.getElementById('stage'), dialog: document.getElementById('dialog-box'),
+        actions: document.getElementById('action-panel'), ending: document.getElementById('screen-ending'),
+        img: document.getElementById('stage-image'), overlay: document.getElementById('stage-overlay')
+    };
+
+    function updateHUD() {
+        document.getElementById('v-hp').innerText = player.hp;
+        document.getElementById('v-dp').innerText = player.dp;
+        document.getElementById('v-atk').innerText = player.atk;
+        document.getElementById('v-int').innerText = player.int;
+        ui.overlay.innerText = `Ano ${player.year} - Sem ${player.week}/4`;
+    }
+
+    function showDialog(text, bgUrl = imgs.hub) {
+        ui.dialog.innerHTML = text;
+        ui.img.src = bgUrl;
+    }
+
+    function renderButtons(buttonsHTML) {
+        ui.actions.innerHTML = buttonsHTML;
+    }
+
+    function startGame() {
+        player.name = document.getElementById('playerName').value || "Duelista";
+        player.deck = document.getElementById('deckName').value || "Deck Misterioso";
+        player.type = document.getElementById('playerType').value;
+        player.friend = document.getElementById('playerFriend').value;
+
+        if (player.type === 'maquina') { player.atk = 10; player.int = 2; }
+        else if (player.type === 'mago') { player.atk = 2; player.int = 10; }
+        else { player.atk = 6; player.int = 6; player.hp = 4; player.maxHp = 4; }
+
+        ui.creation.style.display = 'none';
+        ui.hud.style.display = 'flex';
+        ui.stage.style.display = 'flex';
+        ui.dialog.style.display = 'block';
+        ui.actions.style.display = 'flex';
+
+        updateHUD();
+        hubPrincipal(`Bem-vindo à Academia! Você tem 4 semanas por ano para se preparar. <b>Equilibre seus status!</b>`);
+    }
+
+    function hubPrincipal(msgExtra = "") {
+        if (player.hp <= 0) return dispararGameOver("Seus Pontos de Vida chegaram a zero. Você foi reprovado e expulso.");
+        if (player.week > 4) return iniciarExame(); 
+
+        showDialog(msgExtra, imgs.hub);
+        renderButtons(`
+            <button onclick="acaoEstudar()">📚 Estudar Táticas (+INT)</button>
+            <button onclick="acaoDuelar()" class="btn-danger">⚔️ Duelos Submundo (+ATK, +DP)</button>
+            <button onclick="acaoLoja()">🛒 Ir à Loja (Cura e Itens)</button>
+        `);
+    }
+
+    // --- O MOTOR DE EVENTOS ALEATÓRIOS (RNG) ---
+    function dispararEventoAleatorio() {
+        let chance = Math.random();
+        
+        // 30% de chance de nada acontecer (semanas tranquilas)
+        if(chance < 0.3) {
+            player.week++;
+            hubPrincipal(`A semana passou sem grandes surpresas. Foco nos estudos!`);
+            return;
+        }
+
+        // 70% de chance de um evento caótico
+        showDialog(`<span style="color:var(--danger)">⚠️ EVENTO INESPERADO!</span><br>A rotina da Academia é implacável...`, imgs.threat);
+        
+        if (chance >= 0.3 && chance < 0.6) {
+            // Evento: Professor Crowler (Cobra INT)
+            renderButtons(`<button onclick="resolverEvento('int', 15, 'O Prof. Crowler fez uma sabatina surpresa! Você precisa usar sua Tática (INT).')">Responder Sabatina</button>`);
+        } else {
+            // Evento: Valentão do Obelisco (Cobra ATK)
+            renderButtons(`<button onclick="resolverEvento('atk', 15, 'Um aluno do Obelisco Azul tentou roubar suas cartas! Use sua Força (ATK) para se defender.')">Lutar contra o Valentão</button>`);
+        }
+    }
+
+    function resolverEvento(tipoTeste, requisitoBase, texto) {
+        // A dificuldade escala com o ano
+        let requisito = requisitoBase + (player.year * 10); 
+        let meuStatus = tipoTeste === 'int' ? player.int : player.atk;
+        
+        if (meuStatus >= requisito) {
+            showDialog(`${texto}<br><br><span style="color:var(--success)"><b>SUCESSO!</b> Seu nível era alto o suficiente para lidar com a situação e você saiu ileso.</span>`, imgs.hub);
+            player.week++;
+            renderButtons(`<button onclick="hubPrincipal('De volta à rotina.')">Continuar</button>`);
+        } else {
+            player.hp--;
+            updateHUD();
+            showDialog(`${texto}<br><br><span style="color:var(--danger)"><b>FALHA!</b> Você não tinha ${tipoTeste.toUpperCase()} suficiente! Você sofreu desgaste e <b>perdeu 1 HP.</b></span>`, imgs.threat);
+            player.week++;
+            if (player.hp <= 0) {
+                 renderButtons(`<button onclick="hubPrincipal('')">Continuar</button>`);
+            } else {
+                 renderButtons(`<button onclick="hubPrincipal('Foi por pouco, recupere-se!')">Continuar</button>`);
+            }
+        }
+    }
+
+    // --- AÇÕES ---
+    function acaoEstudar() {
+        let ganho = Math.floor(Math.random() * 4) + 4; // 4 a 7
+        if (player.friend === 'yusei') ganho += 2;
+        player.int += ganho;
+        updateHUD();
+        dispararEventoAleatorio(); // A semana agora passa pelo motor de eventos
+    }
+
+    function acaoDuelar() {
+        let ganhoAtk = Math.floor(Math.random() * 4) + 4; // 4 a 7
+        let ganhoDp = Math.floor(Math.random() * 60) + 60; 
+        if (player.friend === 'jaden') ganhoDp += 40;
+        
+        player.atk += ganhoAtk;
+        player.dp += ganhoDp;
+        updateHUD();
+        dispararEventoAleatorio(); // A semana agora passa pelo motor de eventos
+    }
+
+    function acaoLoja() {
+        showDialog("Dona Dorothy: 'Bem-vindo! Cuidado lá fora, os exames estão puxados.'", imgs.shop);
+        renderButtons(`
+            <button onclick="comprarHP(150)" style="background:#27ae60">Comprar Pão de Ovo (Recupera 1 HP) - 150 DP</button>
+            <button onclick="hubPrincipal('Você voltou ao dormitório.')">Sair da Loja</button>
+        `);
+    }
+
+    function comprarHP(custo) {
+        if (player.hp >= player.maxHp) {
+            showDialog("Sua saúde já está no máximo!", imgs.shop);
+        } else if (player.dp >= custo) {
+            player.dp -= custo;
+            player.hp++;
+            updateHUD();
+            showDialog("Você comeu o Pão de Ovo Lendário e recuperou 1 HP!", imgs.shop);
+        } else {
+            showDialog("Você não tem Duel Points (DP) suficientes!", imgs.shop);
+        }
+    }
+
+    // --- EXAMES (CHEFÕES) ---
+    function iniciarExame() {
+        // Exigências escalam pesadamente (Ano 1 = 25, Ano 2 = 50)
+        let reqAtk = player.year * 25; 
+        let reqInt = player.year * 25;
+        let chefeNome = player.year === 1 ? "Chazz Princeton" : (player.year === 2 ? "Zane Truesdale" : "Exame Final");
+        let imgChefe = player.year === 1 ? imgs.boss1 : imgs.boss2;
+
+        if (player.year === 3) return encruzilhadaFinal();
+
+        showDialog(`<b>Exame de Fim de Ano!</b> Seu oponente é ${chefeNome}.<br>Requisitos Mínimos: <b>${reqAtk} ATK</b> (Força Bruta) ou <b>${reqInt} INT</b> (Estratégia)!`, imgChefe);
+        
+        renderButtons(`
+            <button onclick="resolverExame(${reqAtk}, 'atk')" class="btn-danger">Atacar com Força Bruta</button>
+            <button onclick="resolverExame(${reqInt}, 'int')" class="btn-primary">Usar Tática e Anulações</button>
+        `);
+    }
+
+    function resolverExame(requisito, tipo) {
+        let poderJogador = tipo === 'atk' ? player.atk : player.int;
+        if (player.friend === 'yusei' && tipo === 'int') poderJogador += 5;
+
+        if (poderJogador >= requisito) {
+            player.year++;
+            player.week = 1;
+            let rankNovo = player.year === 2 ? "Rá Amarelo" : "Obelisco Azul";
+            updateHUD();
+            showDialog(`<b>VITÓRIA ESMAGADORA!</b> Seu deck de ${player.deck} funcionou perfeitamente. Bem-vindo ao <b>${rankNovo}</b>!`, imgs.hub);
+            renderButtons(`<button onclick="hubPrincipal('Novo ano escolar, novos desafios!')">Avançar para o Ano ${player.year}</button>`);
+        } else {
+            player.hp -= 2; // Chefões batem mais forte
+            updateHUD();
+            if (player.hp <= 0 && player.friend === 'joey' && !player.savedByJoey) {
+                player.hp = 1;
+                player.savedByJoey = true;
+                updateHUD();
+                showDialog(`<b>Golpe Fatal... MAS ESPERE!</b> Joey pulou na frente do ataque! "Não desiste agora!", ele gritou. Você sobreviveu com 1 HP!`, imgs.duel);
+                renderButtons(`<button onclick="iniciarExame()">Tentar Exame Novamente</button>`);
+            } else if (player.hp > 0) {
+                showDialog(`<b>DERROTA!</b> O oponente riu do seu deck. Você perdeu 2 HP.`, imgs.duel);
+                renderButtons(`<button onclick="iniciarExame()">Tentar Exame Novamente</button>`);
+            } else {
+                dispararGameOver("Você foi obliterado no Exame Prático. O Reitor Sheppard revogou sua matrícula.");
+            }
+        }
+    }
+
+    function encruzilhadaFinal() {
+        ui.overlay.innerText = "FORMATURA";
+        showDialog("Você sobreviveu aos 3 anos. Escolha sua Rota Final para buscar o título máximo:", imgs.hub);
+        // Desafio altíssimo para o end-game
+        renderButtons(`
+            <button onclick="resolverFinal('pro', 90)" class="btn-danger">Enfrentar a Pró-Liga (Exige 90 ATK)</button>
+            <button onclick="resolverFinal('vr', 90)" class="btn-primary">Simulador Batalha da Cidade (Exige 90 INT)</button>
+        `);
+    }
+
+    function resolverFinal(rota, requisito) {
+        let sucesso = false;
+        let imgFinal = rota === 'pro' ? imgs.pro : imgs.vr;
+        let tituloFinal = "";
+
+        if (rota === 'pro' && player.atk >= requisito) sucesso = true;
+        if (rota === 'vr' && player.int >= requisito) sucesso = true;
+
+        if (sucesso) {
+            tituloFinal = rota === 'pro' ? "🏆 REI DOS JOGOS (Pró-Liga)" : "👑 REI DOS JOGOS (Batalha da Cidade)";
+            showDialog(`<b>O MUNDO É SEU!</b> Você quebrou as barreiras e dominou a final. As lendas reconhecem o seu valor!`, imgFinal);
+            renderButtons(`<button onclick="gerarTelaFinal('${tituloFinal}', '#2ecc71')">Receber Título e Licença</button>`);
+        } else {
+            tituloFinal = "Vice-Campeão (Derrotado na Final)";
+            showDialog(`<b>QUASE LÁ...</b> Você chegou à final, mas a pressão foi muita. Você perdeu no último turno.`, imgs.duel);
+            renderButtons(`<button onclick="gerarTelaFinal('${tituloFinal}', '#e74c3c')">Ver Resultados</button>`);
+        }
+    }
+
+    function dispararGameOver(motivo) {
+        showDialog(`<b>GAME OVER</b><br>${motivo}`, imgs.threat);
+        renderButtons(`<button onclick="gerarTelaFinal('Expulso por Falta de HP', '#c0392b')">Ver Estatísticas do Fracasso</button>`);
+    }
+
+    function gerarTelaFinal(rankTexto, corRank) {
+        ui.hud.style.display = 'none';
+        ui.stage.style.display = 'none';
+        ui.dialog.style.display = 'none';
+        ui.actions.style.display = 'none';
+        ui.ending.style.display = 'flex';
+
+        document.getElementById('id-name').innerText = player.name;
+        document.getElementById('id-deck').innerText = player.deck;
+        document.getElementById('id-atk').innerText = player.atk;
+        document.getElementById('id-int').innerText = player.int;
+        document.getElementById('id-friend').innerText = player.friend.toUpperCase();
+        
+        let alojamento = player.year === 1 ? "Slifer Vermelho" : (player.year === 2 ? "Rá Amarelo" : "Obelisco Azul (Formado)");
+        if(rankTexto.includes("REI DOS JOGOS")) alojamento = "Lenda do Duelo";
+        document.getElementById('id-year').innerText = alojamento;
+
+        let divRank = document.getElementById('id-rank-title');
+        divRank.innerText = rankTexto;
+        divRank.style.background = corRank;
+    }
+
+    function baixarLicenca() {
+        const btn = document.querySelector('button[onclick="baixarLicenca()"]');
+        btn.innerText = "Processando Imagem...";
+        const cartao = document.getElementById('id-card');
+        
+        html2canvas(cartao, { backgroundColor: "#000", scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'licenca-duelo.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            btn.innerText = "Baixar Imagem da Carreira";
+        }).catch(e => {
+            alert("Erro ao baixar. Tire um Print (Screenshot) da tela!");
+            btn.innerText = "Baixar Imagem da Carreira";
+        });
+    }
+</script>
+</body>
+</html>

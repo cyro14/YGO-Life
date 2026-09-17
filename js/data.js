@@ -23,5 +23,8 @@ const lojaItens = [
 const bancoTrivia = [
     { q: "Qual o Nível do Mago Negro?", opções: ["Nível 6", "Nível 7", "Nível 8"], correta: 1 },
     { q: "Quantos Pontos de Vida (PV) se começa em um duelo oficial de Batalha da Cidade?", opções: ["2000 PV", "4000 PV", "8000 PV"], correta: 1 },
-    { q: "O efeito do 'Número 24: Dragulas, o Dragão Vampírico' permite que ele se vire para baixo. Isso é um efeito de Ignição ou Rápido?", opções: ["Ignição", "Rápido", "Gatilho"], correta: 1 }
+    { q: "O efeito do 'Número 24: Dragulas, o Dragão Vampírico' permite que ele se vire para baixo. Isso é um efeito de Ignição ou Rápido?", opções: ["Ignição", "Rápido", "Gatilho"], correta: 1 },
+    { q: "Qual o Nível do Elemental HERO Flame Wingman?", opções: ["Nível 6", "Nível 7", "Nível 8"], correta: 0 },
+    { q: "Quantos Pontos de Vida (PV) se começa em um duelo oficial no TCG?", opções: ["2000 PV", "4000 PV", "8000 PV"], correta: 2 },
+    { q: "Qual carta mágica permite comprar duas cartas do deck sem custo?", opções: ["Pote da Ganância", "Buraco Negro", "Monstro Reborn"], correta: 0 }
 ];

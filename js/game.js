@@ -12,6 +12,122 @@ let player = {
     parceiroAtivo: null
 };
 
+// Variáveis temporárias para a tela de criação
+let selecaoAtual = { deck: null, spirit: null };
+
+// Desenha a tela de criação ao abrir o jogo
+function renderizarMenuInicial() {
+    const deckGrid = document.getElementById('deck-grid');
+    const spiritGrid = document.getElementById('spirit-grid');
+
+    // Renderiza Decks
+    deckGrid.innerHTML = decksIniciais.map(d => `
+        <div class="card-item" id="deck-${d.id}" onclick="selecionarOpcao('deck', '${d.id}')">
+            <div class="card-emoji">${d.emoji}</div>
+            <div class="card-name">${d.nome}</div>
+            <div class="card-ace">${d.as}</div>
+            <div class="card-desc">${d.desc}</div>
+        </div>
+    `).join('');
+
+    // Renderiza Espíritos
+    spiritGrid.innerHTML = espiritosIniciais.map(s => `
+        <div class="card-item" id="spirit-${s.id}" onclick="selecionarOpcao('spirit', '${s.id}')">
+            <div class="card-emoji">${s.emoji}</div>
+            <div class="card-name">${s.nome}</div>
+            <div class="card-desc">${s.desc}</div>
+        </div>
+    `).join('');
+}
+
+function renderizarMao() {
+    let handDiv = document.getElementById('player-hand');
+    if (!handDiv) return;
+
+    if (player.reliquias.length === 0) {
+        handDiv.innerHTML = `<div style="color: #666; font-size: 12px; width: 100%; text-align: center;">Nenhuma carta na mão</div>`;
+        return;
+    }
+
+    handDiv.innerHTML = player.reliquias.map((relId, index) => {
+        let item = lojaItens.find(i => i.id === relId);
+        
+        // CORREÇÃO: Se a carta não for encontrada no data.js, ele não trava o jogo
+        if (!item) return `<div style="color: red; font-size: 12px;">Erro: Carta ${relId} não existe</div>`;
+        
+        let bg = item.subTipo === 'armadilha' ? '#bc1c6c' : '#009966'; 
+        
+        return `
+            <div onclick="tentarAtivarCarta('${relId}', ${index})" style="background: ${bg}; border: 2px solid #fff; border-radius: 4px; padding: 10px; min-width: 100px; text-align: center; cursor: pointer; font-size: 12px; font-weight: bold; flex-shrink: 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); color: #fff;">
+                ${item.nome}
+            </div>
+        `;
+    }).join('');
+}
+
+function tentarAtivarCarta(relId, index) {
+    let item = lojaItens.find(i => i.id === relId);
+    
+    if (item.subTipo === 'armadilha') {
+        // Armadilhas não podem ser ativadas no modo livre, precisam de um "Gatilho"
+        alert("Armadilhas só podem ser ativadas em resposta a um evento (ex: durante emboscadas)!");
+        return;
+    }
+    
+    // Processa Magias Normais
+    if (item.id === 'pote_ganancia') {
+        player.dp += 200;
+        showDialog(`Você ativou a Magia <b>Pote da Ganância</b> e comprou 200 DP diretamente para o seu bolso!`, imgs.hub);
+    } else if (item.id === 'monstro_reborn') {
+        if (player.hp >= player.maxHp) {
+            alert("Seu HP já está no máximo!");
+            return; // Impede o gasto à toa
+        }
+        player.hp = player.maxHp;
+        showDialog(`Você ativou <b>Monstro Reborn</b>! Uma aura de luz restaurou completamente seus Pontos de Vida.`, imgs.hub);
+    }
+    
+    // Consome a magia da mão após o uso
+    player.reliquias.splice(index, 1);
+    updateHUD();
+    renderizarMao();
+}
+
+// Manipula o clique nos cards
+function selecionarOpcao(tipo, id) {
+    selecaoAtual[tipo] = id;
+    
+    // Remove o brilho dourado dos outros cartões da mesma categoria
+    let itens = document.querySelectorAll(`[id^="${tipo}-"]`);
+    itens.forEach(el => el.classList.remove('active'));
+    document.getElementById(`${tipo}-${id}`).classList.add('active');
+
+    // Se clicou no Deck, renderiza os Ases vinculados a ele
+    if (tipo === 'deck') {
+        let asesDoDeck = asesIniciais.filter(a => a.deckReq === id);
+        document.getElementById('ace-grid').innerHTML = asesDoDeck.map(a => `
+            <div class="card-item" id="ace-${a.id}" onclick="selecionarOpcao('ace', '${a.id}')">
+                <div class="card-emoji">${a.emoji}</div>
+                <div class="card-name">${a.nome}</div>
+                <div class="card-desc">${a.desc}</div>
+            </div>
+        `).join('');
+        
+        selecaoAtual.ace = null; // Reseta o ás caso troque de deck
+        document.getElementById('btn-start').disabled = true;
+    }
+
+    // Libera o botão apenas se os TRÊS estiverem escolhidos
+    let btnStart = document.getElementById('btn-start');
+    if (selecaoAtual.deck && selecaoAtual.ace && selecaoAtual.spirit) {
+        btnStart.disabled = false;
+        btnStart.innerText = "Matricular-se na Academia";
+    }
+}
+
+// Chame a renderização assim que o script carregar
+window.onload = renderizarMenuInicial;
+
 function abrirInventario() {
     let inv = document.getElementById('modal-inventario');
     let cont = document.getElementById('inv-conteudo');
@@ -50,12 +166,18 @@ let idleTimer = null;
 let duracaoDiaMs = 2000; // 2 segundos = 1 dia no jogo (ajustável)
 
 const ui = {
-    creation: document.getElementById('screen-creation'), hud: document.getElementById('hud'),
-    stage: document.getElementById('stage'), dialog: document.getElementById('dialog-box'),
-    actions: document.getElementById('action-panel'), ending: document.getElementById('screen-ending'),
-    img: document.getElementById('stage-image'), overlay: document.getElementById('stage-overlay'),
-    focoOverlay: document.getElementById('foco-overlay'), diaTexto: document.getElementById('v-dia'),
-    progContainer: document.getElementById('idle-progress-container'), progBar: document.getElementById('idle-progress-bar')
+    creation: document.getElementById('screen-creation'), 
+    hud: document.getElementById('hud'),
+    stage: document.getElementById('stage'), 
+    dialog: document.getElementById('dialog-box'),
+    actions: document.getElementById('action-panel'), 
+    ending: document.getElementById('screen-ending'),
+    img: document.getElementById('stage-image'), 
+    overlay: document.getElementById('stage-overlay'),
+    focoOverlay: document.getElementById('foco-overlay'), 
+    progContainer: document.getElementById('idle-progress-container'), 
+    progBar: document.getElementById('idle-progress-bar'),
+    hand: document.getElementById('player-hand')
 };
 
 // --- FUNÇÕES DE INTERFACE ---
@@ -78,16 +200,18 @@ function renderButtons(buttonsHTML) {
     ui.actions.innerHTML = buttonsHTML;
 }
 
-// --- INICIALIZAÇÃO ---
 function startGame() {
     player.name = document.getElementById('playerName').value || "Novato";
-    player.deck = document.getElementById('playerDeck').value;
-    player.spirit = document.getElementById('playerSpirit').value;
+    player.deck = selecaoAtual.deck;
+    player.ace = selecaoAtual.ace;
+    player.spirit = selecaoAtual.spirit;
 
-    // Ajuste inicial baseado no deck
-    if (player.deck === 'maquina') { player.atk = 10; player.int = 2; }
-    else if (player.deck === 'mago') { player.atk = 2; player.int = 10; }
-    else { player.atk = 5; player.int = 5; player.hp = 4; player.maxHp = 4; }
+    // Define status base do DECK
+    let deckBase = decksIniciais.find(d => d.id === player.deck);
+    player.atk = deckBase.baseAtk;
+    player.int = deckBase.baseInt;
+    player.hp = deckBase.hp;
+    player.maxHp = deckBase.hp;
 
     ui.creation.style.display = 'none';
     ui.hud.style.display = 'flex';
@@ -95,9 +219,28 @@ function startGame() {
     ui.stage.style.display = 'flex';
     ui.dialog.style.display = 'block';
     ui.actions.style.display = 'flex';
+    ui.hand.style.display = 'flex';
 
     updateHUD();
-    iniciarIdleLoop();
+    abrirBoosterInicial();
+}
+
+function abrirBoosterInicial() {
+    let poolReliquias = lojaItens.filter(i => i.tipo === 'reliquia');
+    let draft = poolReliquias.sort(() => 0.5 - Math.random()).slice(0, 3);
+    
+    let nomesHTML = [];
+    draft.forEach(item => {
+        player.reliquias.push(item.id);
+        nomesHTML.push(`🎴 <b>${item.nome}</b>: <span style="font-size:12px; color:#ccc;">${item.desc}</span>`);
+    });
+
+    showDialog(`<span style="color:var(--gold)">🎁 PACOTE DE MATRÍCULA!</span><br>O Reitor Sheppard te entregou 3 cartas raras para iniciar sua jornada. Construa sua estratégia em volta delas:<br><br>${nomesHTML.join('<br><br>')}`, imgs.hub);
+    
+    // CORREÇÃO: Atualiza o visual da mão assim que recebe as cartas
+    renderizarMao(); 
+    
+    renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Vestir Uniforme e Começar</button>`);
 }
 
 // --- MOTOR DE TEMPO (CALENDÁRIO) ---
@@ -187,20 +330,77 @@ function mudarFoco() {
 // --- EVENTOS ESPECIAIS ---
 function dispararEventoAleatorio() {
     let chance = Math.random();
+    
+    // Bloqueio das Espadas da Luz Reveladora
+    if (player.reliquias.includes('espadas_luz') && player.mes === 1) return false; 
+    
     if (chance < 0.7) return false; 
 
     clearInterval(idleTimer);
-    let reqAtk = 15 + (player.ano * 10); 
-    let custoFuga = 50 * player.ano; // Fica mais caro a cada ano
-
-    showDialog(`<span style="color:var(--danger)">⚠️ EMBOSCADA!</span><br>Um valentão bloqueia seu caminho! "Passe ${custoFuga} DP ou duele comigo!"<br><br>Requisito para Vencer: <b>${reqAtk} ATK</b>`, imgs.threat);
     
-    renderButtons(`
-        <button onclick="resolverEventoAtaque(${reqAtk})" class="btn-danger">Duelar com Força Bruta</button>
+    let reqAtk = 5 + (player.mes * 4) + (player.semana * 2) + Math.floor(Math.random() * 5); 
+    let custoFuga = 15 + (player.mes * 20);
+
+    showDialog(`<span style="color:var(--danger)">⚠️ EMBOSCADA!</span><br>Um veterano furioso bloqueia seu caminho! "Pague o pedágio de ${custoFuga} DP ou duele!"<br><br><i>A postura dele é intimidadora. Você não tem certeza se o seu ATK (${player.atk}) é suficiente para vencê-lo...</i>`, imgs.threat);
+    
+    // CORREÇÃO: Declarando a variável botoes com 'let'
+    let botoes = `
+        <button onclick="resolverEventoAtaque(${reqAtk})" class="btn-danger">Arriscar Duelo</button>
         <button onclick="pagarValentao(${custoFuga})" style="background:#f39c12">Pagar ${custoFuga} DP e Fugir</button>
-    `);
+    `;
+
+    // Verifica se o jogador tem a Força Espelho
+    if (player.reliquias.includes('forca_espelho')) {
+        botoes += `<button onclick="ativarArmadilhaBatalha('forca_espelho')" style="background:#bc1c6c; color: white; border-color: #fff;">Ativar Armadilha: Força Espelho</button>`;
+    }
+    
+    renderButtons(botoes);
     
     return true; 
+}
+
+function ativarArmadilhaBatalha(id) {
+    if (id === 'forca_espelho') {
+        // Remove a carta da mão
+        let index = player.reliquias.indexOf('forca_espelho');
+        player.reliquias.splice(index, 1);
+        renderizarMao();
+
+        let recompensa = 25 * player.mes;
+        player.dp += recompensa;
+        updateHUD();
+        
+        showDialog(`<b>VOCÊ ATIVOU UMA CARTA ARMADILHA!</b><br>A <b>Força Espelho</b> estilhaçou o ataque do veterano e varreu o campo dele! Você venceu instantaneamente e pegou ${recompensa} DP!`, imgs.duel);
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar Rotina</button>`);
+    }
+}
+
+function resolverEventoAtaque(requisito) {
+    if (player.atk >= requisito) {
+        let recompensa = 25 * player.mes;
+        // Bônus passivo do Des Koala (Monstro Ás)
+        if (player.ace === 'koala') recompensa += 5;
+        
+        player.dp += recompensa;
+        updateHUD();
+        showDialog(`<span style="color:var(--success)"><b>VITÓRIA ESMAGADORA!</b></span><br>Você superou as expectativas e venceu! Recolheu <b>${recompensa} DP</b> do veterano.`, imgs.duel);
+    } else {
+        // Verifica se tem Força Espelho para refletir a derrota
+        if (player.reliquias.includes('forca_espelho')) {
+            player.reliquias = player.reliquias.filter(r => r !== 'forca_espelho');
+            showDialog(`<b>DERROTA IMINENTE... MAS ESPERE!</b><br>Sua <b>Força Espelho</b> foi ativada, destruindo os monstros do oponente antes do ataque final! Você saiu ileso, mas a carta foi consumida.`, imgs.duel);
+        } else {
+            player.hp--;
+            showDialog(`<span style="color:var(--danger)"><b>DERROTA!</b></span><br>Os monstros dele eram muito mais fortes (${requisito} ATK). Você apanhou no duelo e perdeu <b>1 HP</b> pelo desgaste.`, imgs.threat);
+        }
+        updateHUD();
+    }
+
+    if (player.hp <= 0) {
+        checarMorte(); 
+    } else {
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar Rotina</button>`);
+    }
 }
 
 function pagarValentao(custo) {
@@ -275,7 +475,7 @@ function acaoLoja() {
         <button onclick="comprarLoja('estragado', 30)" style="background:#8e44ad">Sanduíche Suspeito (30 DP)</button>
         <button onclick="comprarLoja('ovo', 80)" style="background:#27ae60">Pão de Ovo Seguro (80 DP)</button>
         <button onclick="comprarLoja('pote', 300)" style="background:#f1c40f; color:#000;">Relíquia: Pote da Ganância (300 DP)</button>
-        <button onclick="comprarLoja('reborn', 600)" style="background:#c0392b">Relíquia: Monstro Reborn (600 DP)</button>
+        <button onclick="comprarLoja('reborn', 600)" style="background:#c0392b">Relíquia: Monster Reborn (600 DP)</button>
         <button onclick="iniciarIdleLoop()">Sair da Loja</button>
     `);
 }
@@ -309,7 +509,7 @@ function comprarLoja(item, custo) {
         showDialog("Você comprou o Pote da Ganância! Agora seus duelos geram +50% DP no modo Idle.", imgs.shop);
     } else if (item === 'reborn') {
         if(!player.reliquias.includes('reborn')) player.reliquias.push('reborn');
-        showDialog("Você comprou o Monstro Reborn! Ele vai te salvar automaticamente de um golpe fatal.", imgs.shop);
+        showDialog("Você comprou o Monster Reborn! Ele vai te salvar automaticamente de um golpe fatal.", imgs.shop);
     }
 
     updateHUD();
@@ -331,7 +531,7 @@ function checarMorte() {
         player.hp = 1;
         player.reliquias = player.reliquias.filter(r => r !== 'reborn'); // Consome a carta
         updateHUD();
-        showDialog(`<b>GOLPE FATAL!</b><br>Mas a magia da sua carta <b>Monstro Reborn</b> ativou! Você sobreviveu com 1 HP!`, imgs.duel);
+        showDialog(`<b>GOLPE FATAL!</b><br>Mas a magia da sua carta <b>Monster Reborn</b> ativou! Você sobreviveu com 1 HP!`, imgs.duel);
         renderButtons(`<button onclick="iniciarIdleLoop()">Ufa, voltar à rotina!</button>`);
     } else {
         dispararGameOver("Seus Pontos de Vida chegaram a zero.");

@@ -15,28 +15,30 @@
         <h1>Duelist Idle Academy</h1>
         <p class="subtitle">A Jornada do Rei dos Jogos</p>
         
-        <div class="form-group">
+        <div class="form-group" style="padding: 10px;">
             <label>Seu Nome:</label>
-            <input type="text" id="playerName" value="Cyro">
+            <input type="text" id="playerName" value="Cyro" style="text-align: center;">
         </div>
-        <div class="form-group">
-            <label>Arquétipo do Deck:</label>
-            <select id="playerDeck">
-                <option value="maquina">Máquina/Dragão (Foco: ATK Brutal)</option>
-                <option value="mago">Mago/Fada (Foco: INT e Controle)</option>
-                <option value="zumbi">Zumbi/Vampiro (Foco: HP e Retorno)</option>
-            </select>
+
+        <div class="selection-section">
+            <div class="selection-title">ESCOLHA SEU DECK</div>
+            <div class="card-grid" id="deck-grid"></div>
         </div>
-        <div class="form-group">
-            <label>Espírito Guardião (Mascote):</label>
-            <select id="playerSpirit">
-                <option value="kuriboh">Kuriboh (Proteção de HP)</option>
-                <option value="ojama">Ojama Amarelo (DP Extra)</option>
-                <option value="mago_fe">Mago da Fé (Bônus de INT)</option>
-            </select>
+
+        <!-- NOVA SEÇÃO DO ÁS (Fica vazia até o deck ser clicado) -->
+        <div class="selection-section">
+            <div class="selection-title">SEU MONSTRO ÁS</div>
+            <div class="card-grid" id="ace-grid">
+                <p style="text-align: center; width: 100%; color: #555; grid-column: span 3; font-size: 12px;">Selecione um Deck primeiro...</p>
+            </div>
+        </div>
+
+        <div class="selection-section">
+            <div class="selection-title">ESCOLHA SEU ESPÍRITO GUARDIÃO</div>
+            <div class="card-grid" id="spirit-grid"></div>
         </div>
         
-        <button class="btn-primary" onclick="startGame()">Matricular-se na Academia</button>
+        <button id="btn-start" class="btn-primary" onclick="startGame()" disabled>Selecionar Cartas para Iniciar</button>
     </div>
 
     <!-- HUD Principal -->
@@ -65,6 +67,18 @@
         <div id="stage-overlay">Mês 1 - Semana 1 - <span id="v-dia">Segunda-feira</span></div>
         <div id="foco-overlay">Foco: ⚔️ Duelos</div>
         <img id="stage-image" src="" alt="Cenário">
+    </div>
+
+    <!-- Palco / Área Visual -->
+    <div id="stage">
+        <div id="stage-overlay">...</div>
+        <div id="foco-overlay">...</div>
+        <img id="stage-image" src="" alt="Cenário">
+    </div>
+
+    <!-- MÃO DO JOGADOR (Fica acima dos diálogos) -->
+    <div id="player-hand" style="display: none; background: #111; padding: 10px; gap: 10px; border-top: 2px solid var(--gold); overflow-x: auto; flex-wrap: nowrap;">
+        <!-- Cartas aparecerão aqui -->
     </div>
 
     <!-- Caixas de Interação -->

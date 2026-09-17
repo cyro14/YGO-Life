@@ -1,3 +1,4 @@
+// Estado Global do Jogador
 let player = {
     name: "", deck: "", spirit: "", dormitorio: "Slifer Vermelho",
     hp: 3, maxHp: 3, dp: 0, atk: 0, int: 0,
@@ -8,7 +9,64 @@ let player = {
 };
 
 let idleTimer = null;
-let duracaoDiaMs = 2000; // Será alterado dinamicamente pelo Disco KaibaCorp
+let duracaoDiaMs = 2000;
+
+// MAPEAMENTO DA INTERFACE (Isso estava faltando!)
+const ui = {
+    creation: document.getElementById('screen-creation'), 
+    hud: document.getElementById('hud'),
+    stage: document.getElementById('stage'), 
+    dialog: document.getElementById('dialog-box'),
+    actions: document.getElementById('action-panel'), 
+    ending: document.getElementById('screen-ending'),
+    img: document.getElementById('stage-image'), 
+    overlay: document.getElementById('stage-overlay'),
+    focoOverlay: document.getElementById('foco-overlay'), 
+    progContainer: document.getElementById('idle-progress-container'), 
+    progBar: document.getElementById('idle-progress-bar')
+};
+
+// --- FUNÇÕES DE INTERFACE ---
+function updateHUD() {
+    document.getElementById('v-hp').innerText = player.hp;
+    document.getElementById('v-dp').innerText = player.dp;
+    document.getElementById('v-atk').innerText = player.atk;
+    document.getElementById('v-int').innerText = player.int;
+    
+    // Assegure-se de que a variável diasDaSemana exista no seu data.js
+    ui.overlay.innerHTML = `Mês ${player.mes} - Sem ${player.semana} - <span style="color:#fff">${diasDaSemana[player.diaIndex]}</span>`;
+    ui.focoOverlay.innerText = `Foco: ${player.foco === 'duelo' ? "⚔️ Duelos" : "📚 Estudos"}`;
+}
+
+function showDialog(text, bgUrl = imgs.hub) {
+    ui.dialog.innerHTML = text;
+    ui.img.src = bgUrl;
+}
+
+function renderButtons(buttonsHTML) {
+    ui.actions.innerHTML = buttonsHTML;
+}
+
+// --- INICIALIZAÇÃO DO JOGO ---
+function startGame() {
+    player.name = document.getElementById('playerName').value || "Novato";
+    player.deck = document.getElementById('playerDeck').value;
+    player.spirit = document.getElementById('playerSpirit').value;
+
+    if (player.deck === 'maquina') { player.atk = 10; player.int = 2; }
+    else if (player.deck === 'mago') { player.atk = 2; player.int = 10; }
+    else { player.atk = 6; player.int = 6; player.hp = 4; player.maxHp = 4; }
+
+    ui.creation.style.display = 'none';
+    ui.hud.style.display = 'flex';
+    ui.progContainer.style.display = 'block';
+    ui.stage.style.display = 'flex';
+    ui.dialog.style.display = 'block';
+    ui.actions.style.display = 'flex';
+
+    updateHUD();
+    iniciarIdleLoop();
+}
 
 function startGame() {
     player.name = document.getElementById('playerName').value || "Novato";

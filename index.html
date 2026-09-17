@@ -3,103 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Duelist Idle Life</title>
+    <title>Duelist Idle Academy</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap');
-
-        :root { --bg-dark: #121212; --panel-bg: #1e1e1e; --gold: #d4af37; --text-light: #ffffff; --danger: #e74c3c; --success: #2ecc71; --idle-bar: #3498db; }
-        
-        body { margin: 0; padding: 0; background-color: var(--bg-dark); color: var(--text-light); font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        
-        #game-container { width: 100%; max-width: 600px; background-color: #000; height: 100vh; max-height: 850px; position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-
-        #hud { display: none; background: #2c3e50; padding: 10px; border-bottom: 2px solid var(--gold); font-size: 14px; font-weight: bold; flex-wrap: wrap; justify-content: space-between; z-index: 10; color: #fff; }
-        #hud span { margin: 5px; text-shadow: 1px 1px 2px #000; }
-        .hud-hp { color: #ff6b81; } .hud-dp { color: #f1c40f; } .hud-atk { color: #ff4757; } .hud-int { color: #7bed9f; }
-
-        /* Barra de Progresso Idle */
-        #idle-progress-container { display: none; width: 100%; background: #222; height: 15px; border-bottom: 1px solid #000; }
-        #idle-progress-bar { width: 0%; height: 100%; background: var(--idle-bar); transition: width 1s linear; }
-
-        #stage { flex-grow: 1; background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); background-size: cover; background-position: center; display: none; flex-direction: column; justify-content: center; align-items: center; position: relative; }
-        #stage-image { height: 60%; max-height: 250px; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); transition: 0.3s; }
-        #stage-overlay { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 5px; color: var(--gold); font-weight: bold; font-size: 12px; border: 1px solid var(--gold); }
-        #foco-overlay { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 5px; color: #fff; font-size: 12px; border: 1px solid #555; }
-
-        #dialog-box { display: none; background: rgba(10, 10, 10, 0.95); border-top: 3px solid var(--gold); padding: 20px; min-height: 100px; font-size: 16px; line-height: 1.5; z-index: 10; color: #ffffff; text-shadow: 1px 1px 2px #000; }
-
-        #action-panel { display: none; background: #111; padding: 10px; gap: 10px; flex-direction: column; z-index: 10; border-top: 1px solid #333; }
-        button { padding: 15px; font-size: 14px; font-weight: bold; border: 2px solid #555; background: #222; color: #ffffff; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
-        button:hover { background: #444; border-color: var(--gold); }
-        button.btn-primary { background: #2980b9; border-color: #3498db; }
-        button.btn-danger { background: #c0392b; border-color: #e74c3c; }
-        button.btn-success { background: #27ae60; border-color: #2ecc71; }
-
-        .screen { padding: 20px; display: flex; flex-direction: column; overflow-y: auto; height: 100%; box-sizing: border-box; background: var(--bg-dark); }
-        h1, h2 { color: var(--gold); text-align: center; text-transform: uppercase; font-family: 'Press Start 2P', cursive; font-size: 18px; line-height: 1.4; }
-        
-        .form-group { margin-bottom: 20px; background: #1e1e1e; padding: 15px; border-radius: 8px; border: 1px solid #333; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 10px; color: #ddd; }
-        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #555; background: #111; color: #fff; font-size: 16px; border-radius: 5px; box-sizing: border-box; }
-
-        #id-card { background: linear-gradient(135deg, #111, #2c3e50); border: 4px solid var(--gold); border-radius: 10px; padding: 20px; margin: 20px 0; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 20px rgba(212, 175, 55, 0.4); color: #fff; }
-        .id-title { font-size: 20px; color: var(--gold); font-weight: 900; letter-spacing: 2px; margin-bottom: 15px; text-transform: uppercase; }
-        .id-stats { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; }
-        .id-stats div { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 4px; border-left: 3px solid var(--gold); }
-        .id-rank { margin-top: 20px; font-size: 18px; font-weight: bold; color: #fff; text-align: center; padding: 10px; width: 100%; border-radius: 5px; box-sizing: border-box; }
-    </style>
 </head>
 <body>
 
 <div id="game-container">
-    
+    <!-- Tela de Criação -->
     <div id="screen-creation" class="screen">
-        <h1>Duelist Idle Life</h1>
-        <p style="text-align: center; color: #ccc; font-size: 14px;">Estude, Duele, Responda!</p>
+        <h1>Duelist Idle Academy</h1>
+        <p class="subtitle">A Jornada do Rei dos Jogos</p>
         
         <div class="form-group">
             <label>Seu Nome:</label>
             <input type="text" id="playerName" value="Cyro">
         </div>
         <div class="form-group">
-            <label>Deck:</label>
-            <input type="text" id="deckName" value="Máquinas de Luz">
+            <label>Arquétipo do Deck:</label>
+            <select id="playerDeck">
+                <option value="maquina">Máquina/Dragão (Foco: ATK Brutal)</option>
+                <option value="mago">Mago/Fada (Foco: INT e Controle)</option>
+                <option value="zumbi">Zumbi/Vampiro (Foco: HP e Retorno)</option>
+            </select>
         </div>
         <div class="form-group">
-            <label>Estilo de Jogo:</label>
-            <select id="playerType">
-                <option value="maquina">Máquina/Dragão (+ Força, - Tática)</option>
-                <option value="mago">Mago/Fada (+ Tática, - Força)</option>
-                <option value="guerreiro">Guerreiro/Zumbi (Equilibrado + HP)</option>
+            <label>Espírito Guardião (Mascote):</label>
+            <select id="playerSpirit">
+                <option value="kuriboh">Kuriboh (Proteção de HP)</option>
+                <option value="ojama">Ojama Amarelo (DP Extra)</option>
+                <option value="mago_fe">Mago da Fé (Bônus de INT)</option>
             </select>
         </div>
         
-        <button class="btn-primary" onclick="startGame()">Iniciar Carreira</button>
+        <button class="btn-primary" onclick="startGame()">Matricular-se na Academia</button>
     </div>
 
+    <!-- HUD Principal -->
     <div id="hud">
         <span class="hud-hp">❤️ HP: <span id="v-hp">3</span></span>
         <span class="hud-dp">🪙 DP: <span id="v-dp">0</span></span>
         <span class="hud-atk">⚔️ ATK: <span id="v-atk">0</span></span>
         <span class="hud-int">🧠 INT: <span id="v-int">0</span></span>
+        <button onclick="abrirInventario()" style="padding: 5px 10px; font-size: 12px; background: #8e44ad; margin-left: auto;">🎒 Inventário</button>
+    </div>
+
+    <!-- Modal de Inventário -->
+    <div id="modal-inventario" style="display: none; position: absolute; top: 10%; left: 5%; width: 90%; height: 80%; background: rgba(15,15,15,0.95); border: 2px solid var(--gold); border-radius: 10px; z-index: 100; padding: 15px; box-sizing: border-box; overflow-y: auto;">
+        <h2 style="margin-top: 0;">Sua Mochila</h2>
+        <div id="inv-conteudo" style="font-size: 14px; margin-bottom: 20px;"></div>
+        <button onclick="fecharInventario()" class="btn-primary" style="width: 100%;">Fechar Mochila</button>
     </div>
     
+    <!-- Barra de Progresso do Dia -->
     <div id="idle-progress-container">
         <div id="idle-progress-bar"></div>
     </div>
 
+    <!-- Palco / Área Visual -->
     <div id="stage">
-        <div id="stage-overlay">Ano 1 - Semana 1</div>
-        <div id="foco-overlay">Foco: ⚔️ Duelo</div>
-        <img id="stage-image" src="" alt="Scene">
+        <div id="stage-overlay">Mês 1 - Semana 1 - <span id="v-dia">Segunda-feira</span></div>
+        <div id="foco-overlay">Foco: ⚔️ Duelos</div>
+        <img id="stage-image" src="" alt="Cenário">
     </div>
 
+    <!-- Caixas de Interação -->
     <div id="dialog-box"></div>
     <div id="action-panel"></div>
 
+    <!-- Tela Final (Fim de Jogo) -->
     <div id="screen-ending" class="screen" style="display: none;">
-        <h2>Fim de Jogo</h2>
+        <h2>Resultado da Carreira</h2>
         <div id="id-card">
             <div class="id-title">Licença de Duelista</div>
             <div class="id-stats">
@@ -111,267 +85,12 @@
             </div>
             <div class="id-rank" id="id-rank-title">Eliminado</div>
         </div>
-        <button onclick="location.reload()">Tentar Outra Vez</button>
+        <button onclick="location.reload()">Jogar Novamente</button>
     </div>
-
 </div>
 
-<script>
-    let player = {
-        name: "", deck: "", type: "",
-        hp: 3, maxHp: 3, dp: 0, atk: 0, int: 0,
-        year: 1, week: 1, foco: 'duelo'
-    };
-
-    let idleTimer = null;
-    let diasPassados = 0;
-    const DIAS_PARA_AULA = 7; 
-
-    // Banco de Perguntas (Trivia)
-    const bancoTrivia = [
-        { q: "Qual o Nível do Mago Negro?", opções: ["Nível 6", "Nível 7", "Nível 8"], correta: 1 },
-        { q: "O que a carta mágica 'Polimerização' faz?", opções: ["Destrói um monstro", "Invoca por Fusão", "Compra 2 cartas"], correta: 1 },
-        { q: "Quantos Pontos de Vida (PV) se começa em um duelo oficial no anime (Regras da Batalha da Cidade)?", opções: ["2000 PV", "4000 PV", "8000 PV"], correta: 1 },
-        { q: "Qual destes monstros é necessário para invocar o 'Dragão Branco de Olhos Azuis Definitivo'?", opções: ["3x Dragão Branco", "2x Dragão Branco e 1 Mago", "1x Dragão Branco e 1 Dragão Negro"], correta: 0 },
-        { q: "Cartas de Armadilha de Resposta (Counter Traps) têm qual Spell Speed?", opções: ["Speed 1", "Speed 2", "Speed 3"], correta: 2 }
-    ];
-
-    const imgs = {
-        hub: "https://images.ygoprodeck.com/images/cards/24094653.jpg",
-        study: "https://images.ygoprodeck.com/images/cards/38033121.jpg",
-        duel: "https://images.ygoprodeck.com/images/cards/46986414.jpg",
-        shop: "https://images.ygoprodeck.com/images/cards/55144522.jpg",
-        boss1: "https://images.ygoprodeck.com/images/cards/11111111.jpg", 
-        boss2: "https://images.ygoprodeck.com/images/cards/70095154.jpg",
-        threat: "https://images.ygoprodeck.com/images/cards/70781052.jpg"
-    };
-
-    const ui = {
-        creation: document.getElementById('screen-creation'), hud: document.getElementById('hud'),
-        stage: document.getElementById('stage'), dialog: document.getElementById('dialog-box'),
-        actions: document.getElementById('action-panel'), ending: document.getElementById('screen-ending'),
-        img: document.getElementById('stage-image'), overlay: document.getElementById('stage-overlay'),
-        focoOverlay: document.getElementById('foco-overlay'),
-        progContainer: document.getElementById('idle-progress-container'),
-        progBar: document.getElementById('idle-progress-bar')
-    };
-
-    function updateHUD() {
-        document.getElementById('v-hp').innerText = player.hp;
-        document.getElementById('v-dp').innerText = player.dp;
-        document.getElementById('v-atk').innerText = player.atk;
-        document.getElementById('v-int').innerText = player.int;
-        ui.overlay.innerText = `Ano ${player.year} - Sem ${player.week}/4`;
-        
-        let focoTxt = player.foco === 'duelo' ? "⚔️ Duelo" : "📚 Estudo";
-        ui.focoOverlay.innerText = `Foco: ${focoTxt}`;
-    }
-
-    function showDialog(text, bgUrl = imgs.hub) {
-        ui.dialog.innerHTML = text;
-        ui.img.src = bgUrl;
-    }
-
-    function renderButtons(buttonsHTML) {
-        ui.actions.innerHTML = buttonsHTML;
-    }
-
-    function startGame() {
-        player.name = document.getElementById('playerName').value || "Duelista";
-        player.deck = document.getElementById('deckName').value || "Deck Misterioso";
-        player.type = document.getElementById('playerType').value;
-
-        if (player.type === 'maquina') { player.atk = 10; player.int = 2; }
-        else if (player.type === 'mago') { player.atk = 2; player.int = 10; }
-        else { player.atk = 6; player.int = 6; player.hp = 4; player.maxHp = 4; }
-
-        ui.creation.style.display = 'none';
-        ui.hud.style.display = 'flex';
-        ui.progContainer.style.display = 'block';
-        ui.stage.style.display = 'flex';
-        ui.dialog.style.display = 'block';
-        ui.actions.style.display = 'flex';
-
-        updateHUD();
-        iniciarIdleLoop();
-    }
-
-    // --- SISTEMA IDLE ---
-    function iniciarIdleLoop() {
-        if (player.hp <= 0) return dispararGameOver("Seus Pontos de Vida chegaram a zero.");
-        if (player.week > 4) return iniciarExame(); 
-
-        showDialog(`<b>Modo Automático Ativo!</b><br>O tempo está passando. Mude seu foco se precisar de outros status ou visite a loja.`, player.foco === 'duelo' ? imgs.duel : imgs.study);
-        
-        renderButtons(`
-            <button onclick="mudarFoco()" class="btn-primary">Mudar Foco (Atual: ${player.foco === 'duelo' ? 'Duelos' : 'Estudos'})</button>
-            <button onclick="acaoLoja()">🛒 Visitar Loja (Pausa o tempo)</button>
-        `);
-
-        clearInterval(idleTimer);
-        idleTimer = setInterval(() => {
-            diasPassados++;
-            
-            // Ganhos automáticos baseados no foco
-            if (player.foco === 'duelo') {
-                player.atk += Math.floor(Math.random() * 3) + 1;
-                player.dp += Math.floor(Math.random() * 20) + 10;
-            } else {
-                player.int += Math.floor(Math.random() * 4) + 2;
-            }
-            updateHUD();
-
-            // Atualiza barra visual (1 segundo = 1 dia)
-            let progresso = (diasPassados / DIAS_PARA_AULA) * 100;
-            ui.progBar.style.width = progresso + '%';
-
-            // Checa se deu a hora da Aula (Trivia)
-            if (diasPassados >= DIAS_PARA_AULA) {
-                clearInterval(idleTimer);
-                setTimeout(chamarTrivia, 500); // pequeno delay para a barra encher
-            }
-        }, 1000); 
-    }
-
-    function mudarFoco() {
-        player.foco = player.foco === 'duelo' ? 'estudo' : 'duelo';
-        updateHUD();
-        showDialog(`Foco alterado para: <b>${player.foco.toUpperCase()}</b>.`, player.foco === 'duelo' ? imgs.duel : imgs.study);
-        renderButtons(`
-            <button onclick="mudarFoco()" class="btn-primary">Mudar Foco (Atual: ${player.foco === 'duelo' ? 'Duelos' : 'Estudos'})</button>
-            <button onclick="acaoLoja()">🛒 Visitar Loja (Pausa o tempo)</button>
-        `);
-    }
-
-    // --- SISTEMA DE TRIVIA ---
-    function chamarTrivia() {
-        // Pausado, resetar barra
-        diasPassados = 0;
-        ui.progBar.style.width = '0%';
-        ui.progBar.style.transition = 'none'; // tira animação pra zerar rápido
-        setTimeout(() => ui.progBar.style.transition = 'width 1s linear', 100);
-
-        // Puxar pergunta aleatória
-        let t = bancoTrivia[Math.floor(Math.random() * bancoTrivia.length)];
-        
-        showDialog(`<span style="color:var(--gold)">🎓 HORA DA AULA!</span><br>Professor Crowler te chamou! Responda rápido:<br><br><b>${t.q}</b>`, imgs.study);
-        
-        let botoes = t.opções.map((opc, index) => {
-            return `<button onclick="responderTrivia(${index}, ${t.correta})">${opc}</button>`;
-        }).join("");
-
-        renderButtons(botoes);
-    }
-
-    function responderTrivia(escolha, correta) {
-        if (escolha === correta) {
-            player.int += 15; // Bônus por acerto
-            showDialog(`<span style="color:var(--success)"><b>CORRETO!</b></span> Você ganhou +15 INT pelo acerto!`, imgs.hub);
-        } else {
-            player.hp--;
-            showDialog(`<span style="color:var(--danger)"><b>ERRADO!</b></span> O Professor Crowler zombou de você. Você perdeu 1 HP por exaustão mental.`, imgs.threat);
-        }
-        
-        player.week++;
-        updateHUD();
-        
-        if(player.hp <= 0) {
-            renderButtons(`<button onclick="dispararGameOver('Reprovado e sem saúde mental.')">Continuar</button>`);
-        } else {
-            renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Avançar para a próxima semana</button>`);
-        }
-    }
-
-    // --- LOJA ---
-    function acaoLoja() {
-        clearInterval(idleTimer); // Pausa o jogo
-        showDialog("Dona Dorothy: 'O tempo para quando você entra aqui. O que vai levar?'", imgs.shop);
-        renderButtons(`
-            <button onclick="comprarHP(150)" style="background:#27ae60">Pão de Ovo (+1 HP) - 150 DP</button>
-            <button onclick="iniciarIdleLoop()">Sair da Loja (Retoma o tempo)</button>
-        `);
-    }
-
-    function comprarHP(custo) {
-        if (player.hp >= player.maxHp) {
-            showDialog("Sua saúde já está no máximo!", imgs.shop);
-        } else if (player.dp >= custo) {
-            player.dp -= custo;
-            player.hp++;
-            updateHUD();
-            showDialog("Você comeu o Pão de Ovo Lendário e recuperou 1 HP!", imgs.shop);
-        } else {
-            showDialog("Faltam Duel Points (DP)!", imgs.shop);
-        }
-    }
-
-    // --- EXAMES & FIM ---
-    function iniciarExame() {
-        clearInterval(idleTimer);
-        let reqAtk = player.year * 40; // Exigências subiram pro modo idle
-        let reqInt = player.year * 40;
-
-        if (player.year === 3) return encruzilhadaFinal();
-
-        showDialog(`<b>Exame de Fim de Ano!</b><br>Requisitos Mínimos: <b>${reqAtk} ATK</b> ou <b>${reqInt} INT</b>!`, imgs.boss1);
-        
-        renderButtons(`
-            <button onclick="resolverExame(${reqAtk}, 'atk')" class="btn-danger">Força Bruta</button>
-            <button onclick="resolverExame(${reqInt}, 'int')" class="btn-primary">Tática</button>
-        `);
-    }
-
-    function resolverExame(requisito, tipo) {
-        let poder = tipo === 'atk' ? player.atk : player.int;
-        if (poder >= requisito) {
-            player.year++; player.week = 1;
-            showDialog(`<b>VITÓRIA!</b> Você passou de ano!`, imgs.hub);
-            renderButtons(`<button onclick="iniciarIdleLoop()">Começar Ano ${player.year}</button>`);
-        } else {
-            player.hp -= 2;
-            if (player.hp > 0) {
-                showDialog(`<b>DERROTA!</b> Perdeu 2 HP. Tente de novo!`, imgs.duel);
-                renderButtons(`<button onclick="iniciarExame()">Tentar Novamente</button>`);
-            } else {
-                dispararGameOver("Expulso no Exame Prático.");
-            }
-        }
-        updateHUD();
-    }
-
-    function encruzilhadaFinal() {
-        showDialog("Você sobreviveu aos 3 anos. Escolha sua Rota Final (Exige 150 Stats):", imgs.hub);
-        renderButtons(`
-            <button onclick="resolverFinal('pro', 150)" class="btn-danger">Pró-Liga (ATK)</button>
-            <button onclick="resolverFinal('vr', 150)" class="btn-primary">Batalha da Cidade (INT)</button>
-        `);
-    }
-
-    function resolverFinal(rota, req) {
-        let poder = rota === 'pro' ? player.atk : player.int;
-        if (poder >= req) gerarTelaFinal("🏆 REI DOS JOGOS", "#2ecc71");
-        else gerarTelaFinal("Vice-Campeão", "#e74c3c");
-    }
-
-    function dispararGameOver(motivo) {
-        clearInterval(idleTimer);
-        showDialog(`<b>GAME OVER</b><br>${motivo}`, imgs.threat);
-        renderButtons(`<button onclick="gerarTelaFinal('Eliminado', '#c0392b')">Ver Resultados</button>`);
-    }
-
-    function gerarTelaFinal(rank, cor) {
-        ui.hud.style.display = 'none'; ui.stage.style.display = 'none';
-        ui.progContainer.style.display = 'none'; ui.dialog.style.display = 'none';
-        ui.actions.style.display = 'none'; ui.ending.style.display = 'flex';
-
-        document.getElementById('id-name').innerText = player.name;
-        document.getElementById('id-deck').innerText = player.deck;
-        document.getElementById('id-atk').innerText = player.atk;
-        document.getElementById('id-int').innerText = player.int;
-        document.getElementById('id-year').innerText = "Formado";
-        document.getElementById('id-rank-title').innerText = rank;
-        document.getElementById('id-rank-title').style.background = cor;
-    }
-</script>
+<!-- Importação dos Scripts (Ordem importa!) -->
+<script src="js/data.js"></script>
+<script src="js/game.js"></script>
 </body>
 </html>

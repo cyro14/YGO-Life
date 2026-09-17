@@ -8,8 +8,43 @@ let player = {
     foco: 'duelo',
     reliquias: [],
     equipamentos: [],
+    consumiveis: [],
     parceiroAtivo: null
 };
+
+function abrirInventario() {
+    let inv = document.getElementById('modal-inventario');
+    let cont = document.getElementById('inv-conteudo');
+    
+    let html = `<b>🥪 Consumíveis:</b><br>`;
+    if (player.consumiveis.length === 0) html += `<i>Vazio</i><br>`;
+    player.consumiveis.forEach((item, index) => {
+        html += `- ${item.nome} <button onclick="usarConsumivel(${index})" style="padding: 2px 5px; font-size: 10px;">Usar</button><br>`;
+    });
+
+    html += `<br><b>🎴 Relíquias:</b><br>`;
+    if (player.reliquias.length === 0) html += `<i>Vazio</i><br>`;
+    player.reliquias.forEach(r => html += `- ${r}<br>`);
+
+    cont.innerHTML = html;
+    inv.style.display = 'block';
+}
+
+function fecharInventario() {
+    document.getElementById('modal-inventario').style.display = 'none';
+}
+
+function usarConsumivel(index) {
+    let item = player.consumiveis[index];
+    if (player.hp >= player.maxHp) {
+        alert("Seu HP já está cheio!");
+        return;
+    }
+    player.hp++;
+    player.consumiveis.splice(index, 1); // Remove o item
+    updateHUD();
+    abrirInventario(); // Atualiza a tela do inventário
+}
 
 let idleTimer = null;
 let duracaoDiaMs = 2000; // 2 segundos = 1 dia no jogo (ajustável)
@@ -150,21 +185,35 @@ function mudarFoco() {
 }
 
 // --- EVENTOS ESPECIAIS ---
-// --- EVENTOS ALEATÓRIOS (RNG) ---
 function dispararEventoAleatorio() {
     let chance = Math.random();
-    if (chance < 0.7) return false; // 70% de chance de seguir a vida normalmente
+    if (chance < 0.7) return false; 
 
-    clearInterval(idleTimer); // Pausa o motor idle
+    clearInterval(idleTimer);
     let reqAtk = 15 + (player.ano * 10); 
+    let custoFuga = 50 * player.ano; // Fica mais caro a cada ano
 
-    showDialog(`<span style="color:var(--danger)">⚠️ EMBOSCADA!</span><br>Um valentão do Obelisco Azul te parou no corredor! "Passe seus DP ou duele comigo!"<br><br>Requisito para Vencer: <b>${reqAtk} ATK</b>`, imgs.threat);
+    showDialog(`<span style="color:var(--danger)">⚠️ EMBOSCADA!</span><br>Um valentão bloqueia seu caminho! "Passe ${custoFuga} DP ou duele comigo!"<br><br>Requisito para Vencer: <b>${reqAtk} ATK</b>`, imgs.threat);
     
     renderButtons(`
         <button onclick="resolverEventoAtaque(${reqAtk})" class="btn-danger">Duelar com Força Bruta</button>
+        <button onclick="pagarValentao(${custoFuga})" style="background:#f39c12">Pagar ${custoFuga} DP e Fugir</button>
     `);
     
-    return true; // Avisa ao loop que um evento ocorreu e a barra deve parar
+    return true; 
+}
+
+function pagarValentao(custo) {
+    if (player.dp >= custo) {
+        player.dp -= custo;
+        updateHUD();
+        showDialog(`Você entregou os ${custo} DP. O valentão riu e te deixou passar. A dignidade dói, mas os Pontos de Vida estão intactos.`, imgs.threat);
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Engolir o orgulho e continuar</button>`);
+    } else {
+        showDialog(`Você não tem ${custo} DP! O valentão percebeu que você está quebrado e atacou!`, imgs.threat);
+        // Força a derrota automaticamente já que não tem dinheiro nem quis lutar
+        renderButtons(`<button onclick="resolverEventoAtaque(9999)" class="btn-danger">Sofrer as consequências</button>`);
+    }
 }
 
 function resolverEventoAtaque(requisito) {
@@ -248,8 +297,13 @@ function comprarLoja(item, custo) {
             showDialog("Ugh... O recheio estava vencido. Você perdeu 1 HP.", imgs.threat);
         }
     } else if (item === 'ovo') {
-        if (player.hp < player.maxHp) player.hp++;
-        showDialog("Um clássico! Você recuperou 1 HP de forma segura.", imgs.shop);
+        if (player.hp < player.maxHp) {
+            player.hp++;
+            showDialog("Você comeu na hora e recuperou 1 HP.", imgs.shop);
+        } else {
+            player.consumiveis.push({ id: 'ovo', nome: 'Pão de Ovo Seguro' });
+            showDialog("Seu HP está cheio! Você guardou o Pão de Ovo na mochila.", imgs.shop);
+        }
     } else if (item === 'pote') {
         if(!player.reliquias.includes('pote')) player.reliquias.push('pote');
         showDialog("Você comprou o Pote da Ganância! Agora seus duelos geram +50% DP no modo Idle.", imgs.shop);

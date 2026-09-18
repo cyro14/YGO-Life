@@ -65,3 +65,35 @@ const bancoTrivia = [
     { q: "Qual carta mágica permite comprar duas cartas do deck sem custo?", opções: ["Pote da Ganância", "Buraco Negro", "Monstro Reborn"], correta: 0 }
 ];
 
+const puzzlesExame = {
+    1: { 
+        bossName: "Chazz Princeton",
+        bossImg: "assets/images/pxArt.png", // Podes trocar depois por uma imagem do Chazz
+        hero: {
+            texto: "Chazz invocou o 'Dragão Armado LV7' (2800 ATK) e preparou-se para destruir o teu lado do campo! Tens o 'Homem-Pássaro Chama' em campo, e 'Arranha-Céu' na mão. Qual é a tua jogada?",
+            opcoes: [
+                { texto: "Ativar Arranha-Céu e atacar (Exige 40 ATK)", stat: 'atk', req: 40, correto: true, msg: "O teu Herói usou o terreno para superar o ataque do Dragão e venceste o duelo!" },
+                { texto: "Tentar controlar com armadilhas (Exige 60 INT)", stat: 'int', req: 60, correto: true, msg: "Foste inteligente! Usaste armadilhas para anular o efeito do Dragão Armado." },
+                { texto: "Mudar para Defesa e rezar", stat: 'int', req: 0, correto: false, msg: "O efeito do Dragão Armado destruiu a tua defesa e perdeste pontos de vida diretos!" }
+            ]
+        },
+        roid: {
+            texto: "Chazz invocou o 'Rei Ojama' e bloqueou 3 zonas de monstros tuas! Tens 'Gyroid' no campo e 'Brocaroid' na mão.",
+            opcoes: [
+                { texto: "Invocação-Tributo de Força (Exige 60 ATK)", stat: 'atk', req: 60, correto: true, msg: "Superaste o bloqueio com pura força bruta e esmagaste o Rei Ojama!" },
+                { texto: "Mudar Gyroid para Defesa (Exige 40 INT)", stat: 'int', req: 40, correto: true, msg: "O efeito do Gyroid manteve-o vivo. No turno seguinte conseguiste espaço para virar o jogo!" },
+                { texto: "Atacar o Rei Ojama diretamente", stat: 'atk', req: 0, correto: false, msg: "O Rei Ojama absorveu o ataque e sofres dano de recuo!" }
+            ]
+        },
+        beast: {
+            texto: "Chazz colocou 3 cartas viradas para baixo e invocou 'Ojama Amarelo'. É uma isca óbvia! O teu 'Des Koala' está pronto a agir.",
+            opcoes: [
+                { texto: "Atacar com Força Máxima (Exige 60 ATK)", stat: 'atk', req: 60, correto: true, msg: "Eras tão forte que a Força Espelho dele não foi suficiente para te parar!" },
+                { texto: "Efeito de Dano Direto (Exige 40 INT)", stat: 'int', req: 40, correto: true, msg: "Percebeste a armadilha! Usaste o efeito do Des Koala para vencer sem iniciar a fase de batalha." },
+                { texto: "Invocar mais monstros para ajudar", stat: 'int', req: 0, correto: false, msg: "Ele ativou 'Tributo Torrencial' e limpou todo o teu campo!" }
+            ]
+        }
+    }
+    // O Ano 2 e 3 podem ser adicionados aqui no futuro
+};
+

@@ -541,10 +541,74 @@ function comprarLoja(item, custo) {
 }
 
 // --- FIM DE JOGO ---
+// --- EXAMES FINAIS E PUZZLES ---
 function iniciarExameFinal() {
     clearInterval(idleTimer);
-    showDialog(`<b>Mês do Exame Final!</b><br>O ano letivo acabou, prepare seu deck. Em breve, a mecânica de Puzzles será implementada aqui.`, imgs.boss1);
-    renderButtons(`<button onclick="dispararGameOver('Fim do Protótipo!')">Ver Tela Final</button>`);
+    
+    // Fallback de segurança caso o ano ainda não tenha puzzle (ex: Ano 2)
+    let anoExame = puzzlesExame[player.ano] ? player.ano : 1; 
+    let puzzle = puzzlesExame[anoExame];
+    let puzzleDeck = puzzle[player.deck];
+
+    showDialog(`<span style="color:var(--danger)">🔥 EXAME PRÁTICO DO ${player.ano}º ANO! 🔥</span><br><b>Oponente: ${puzzle.bossName}</b><br><br>${puzzleDeck.texto}`, imgs.bg_academy, puzzle.bossImg);
+    
+    let botoesHTML = puzzleDeck.opcoes.map((opc, index) => {
+        return `<button onclick="resolverPuzzleExame(${anoExame}, '${player.deck}', ${index})" class="btn-primary" style="margin-bottom: 5px; font-size: 13px; text-transform: none;">${opc.texto}</button>`;
+    }).join('');
+
+    renderButtons(botoesHTML);
+}
+
+function resolverPuzzleExame(anoExame, deckId, opcIndex) {
+    let puzzle = puzzlesExame[anoExame][deckId];
+    let escolha = puzzle.opcoes[opcIndex];
+    let statAtual = escolha.stat === 'atk' ? player.atk : player.int;
+
+    if (escolha.correto && statAtual >= escolha.req) {
+        // VITÓRIA
+        player.ano++;
+        player.mes = 1;
+        player.semana = 1;
+        player.diaIndex = 0;
+        
+        // Progressão de Dormitório
+        if (player.ano === 2) player.dormitorio = "Rá Amarelo";
+        if (player.ano === 3) player.dormitorio = "Obelisco Azul";
+
+        updateHUD();
+        showDialog(`<span style="color:var(--success)"><b>VITÓRIA NO EXAME!</b></span><br>${escolha.msg}<br><br>Passaste de ano com distinção. Bem-vindo ao teu novo dormitório: <b>${player.dormitorio}</b>!`, imgs.bg_academy);
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Iniciar ${player.ano}º Ano</button>`);
+    
+    } else if (escolha.correto && statAtual < escolha.req) {
+        // FALHA POR FALTA DE STATS
+        player.hp -= 2;
+        showDialog(`<span style="color:var(--danger)"><b>FALTOU PODER!</b></span><br>A ideia era boa, mas só tinhas ${statAtual} de ${escolha.stat.toUpperCase()} (Exigia ${escolha.req}). Foste esmagado!<br><br><b>Perdeste 2 HP.</b>`, imgs.threat);
+        verificarMorteExame();
+    
+    } else {
+        // ESCOLHA ERRADA
+        player.hp -= 2;
+        showDialog(`<span style="color:var(--danger)"><b>JOGADA TERRÍVEL!</b></span><br>${escolha.msg}<br><br><b>Perdeste 2 HP.</b>`, imgs.threat);
+        verificarMorteExame();
+    }
+}
+
+function verificarMorteExame() {
+    updateHUD();
+    if (player.hp <= 0) {
+        if (player.reliquias.includes('monstro_reborn')) {
+            player.hp = 1;
+            player.reliquias = player.reliquias.filter(r => r !== 'monstro_reborn');
+            updateHUD();
+            renderizarMao();
+            showDialog(`<b>GOLPE FATAL!</b><br>A magia <b>Monstro Reborn</b> ativou-se a partir da tua mão! Sobreviveste com 1 HP e podes continuar o exame!`, imgs.bg_academy);
+            renderButtons(`<button onclick="iniciarExameFinal()">Retomar Exame</button>`);
+        } else {
+            dispararGameOver("Foste obliterado no Exame Prático. Matrícula revogada.");
+        }
+    } else {
+        renderButtons(`<button onclick="iniciarExameFinal()" class="btn-danger">Repensar Estratégia e Tentar Novamente</button>`);
+    }
 }
 
 function checarMorte() {

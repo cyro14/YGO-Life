@@ -20,24 +20,56 @@ function renderizarMenuInicial() {
     const deckGrid = document.getElementById('deck-grid');
     const spiritGrid = document.getElementById('spirit-grid');
 
-    // Renderiza Decks
+    // 1. Renderiza Decks (Agora puxando apenas nome e status base)
     deckGrid.innerHTML = decksIniciais.map(d => `
         <div class="card-item" id="deck-${d.id}" onclick="selecionarOpcao('deck', '${d.id}')">
-            <div class="card-emoji">${d.emoji}</div>
+            <div class="card-emoji" style="font-size: 40px;">${d.emoji}</div>
             <div class="card-name">${d.nome}</div>
-            <div class="card-ace">${d.as}</div>
-            <div class="card-desc">${d.desc}</div>
+            <div class="card-desc">ATK: ${d.baseAtk} | INT: ${d.baseInt}</div>
         </div>
     `).join('');
 
-    // Renderiza Espíritos
+    // 2. Renderiza Espíritos (Usando a tag <img> em vez de emojis)
     spiritGrid.innerHTML = espiritosIniciais.map(s => `
         <div class="card-item" id="spirit-${s.id}" onclick="selecionarOpcao('spirit', '${s.id}')">
-            <div class="card-emoji">${s.emoji}</div>
+            <img src="${s.img}" class="card-img" alt="${s.nome}" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div style=\\'font-size:10px; color:red;\\'>Imagem não encontrada</div>');">
             <div class="card-name">${s.nome}</div>
             <div class="card-desc">${s.desc}</div>
         </div>
     `).join('');
+}
+
+// Manipula o clique nos cards
+function selecionarOpcao(tipo, id) {
+    selecaoAtual[tipo] = id;
+    
+    // Remove o brilho dourado dos outros cartões da mesma categoria
+    let itens = document.querySelectorAll(`[id^="${tipo}-"]`);
+    itens.forEach(el => el.classList.remove('active'));
+    document.getElementById(`${tipo}-${id}`).classList.add('active');
+
+    // Se clicou no Deck, desenha os Ases vinculados a ele na div do meio
+    if (tipo === 'deck') {
+        let asesDoDeck = asesIniciais.filter(a => a.deckReq === id);
+        
+        document.getElementById('ace-grid').innerHTML = asesDoDeck.map(a => `
+            <div class="card-item" id="ace-${a.id}" onclick="selecionarOpcao('ace', '${a.id}')">
+                <img src="${a.img}" class="card-img" alt="${a.nome}" onerror="this.style.display='none';">
+                <div class="card-name">${a.nome}</div>
+                <div class="card-desc">${a.desc}</div>
+            </div>
+        `).join('');
+        
+        selecaoAtual.ace = null; // Reseta o ás caso troque de deck
+        document.getElementById('btn-start').disabled = true;
+    }
+
+    // Libera o botão de Matricular apenas se os TRÊS estiverem escolhidos
+    let btnStart = document.getElementById('btn-start');
+    if (selecaoAtual.deck && selecaoAtual.ace && selecaoAtual.spirit) {
+        btnStart.disabled = false;
+        btnStart.innerText = "Matricular-se na Academia";
+    }
 }
 
 function renderizarMao() {
@@ -91,38 +123,6 @@ function tentarAtivarCarta(relId, index) {
     player.reliquias.splice(index, 1);
     updateHUD();
     renderizarMao();
-}
-
-// Manipula o clique nos cards
-function selecionarOpcao(tipo, id) {
-    selecaoAtual[tipo] = id;
-    
-    // Remove o brilho dourado dos outros cartões da mesma categoria
-    let itens = document.querySelectorAll(`[id^="${tipo}-"]`);
-    itens.forEach(el => el.classList.remove('active'));
-    document.getElementById(`${tipo}-${id}`).classList.add('active');
-
-    // Se clicou no Deck, renderiza os Ases vinculados a ele
-    if (tipo === 'deck') {
-        let asesDoDeck = asesIniciais.filter(a => a.deckReq === id);
-        document.getElementById('ace-grid').innerHTML = asesDoDeck.map(a => `
-            <div class="card-item" id="ace-${a.id}" onclick="selecionarOpcao('ace', '${a.id}')">
-                <div class="card-emoji">${a.emoji}</div>
-                <div class="card-name">${a.nome}</div>
-                <div class="card-desc">${a.desc}</div>
-            </div>
-        `).join('');
-        
-        selecaoAtual.ace = null; // Reseta o ás caso troque de deck
-        document.getElementById('btn-start').disabled = true;
-    }
-
-    // Libera o botão apenas se os TRÊS estiverem escolhidos
-    let btnStart = document.getElementById('btn-start');
-    if (selecaoAtual.deck && selecaoAtual.ace && selecaoAtual.spirit) {
-        btnStart.disabled = false;
-        btnStart.innerText = "Matricular-se na Academia";
-    }
 }
 
 // Chame a renderização assim que o script carregar
@@ -191,9 +191,30 @@ function updateHUD() {
     ui.focoOverlay.innerText = `Foco: ${player.foco === 'duelo' ? "⚔️ Duelos" : "📚 Estudos"}`;
 }
 
-function showDialog(text, bgUrl = imgs.hub) {
+function showDialog(text, stageBgUrl = null, centerImgUrl = null) {
     ui.dialog.innerHTML = text;
-    ui.img.src = bgUrl;
+
+    // Altera o plano de fundo do container inteiro (Dormitórios, Floresta, etc)
+    if (stageBgUrl) {
+        // Usa um gradiente escuro por cima da imagem para o texto da interface ficar legível
+        ui.stage.style.backgroundImage = `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.7)), url('${stageBgUrl}')`;
+        ui.stage.style.backgroundSize = "cover";
+        ui.stage.style.backgroundPosition = "center";
+    }
+
+    // Se houver uma imagem específica para o centro (ex: um sprite de personagem)
+    if (centerImgUrl) {
+        ui.img.src = centerImgUrl;
+        ui.img.style.display = 'block';
+    } else {
+        ui.img.style.display = 'none'; // Esconde a imagem central se só precisarmos do cenário
+    }
+}
+
+function getDormBackground() {
+    if (player.ano === 1) return imgs.bg_slifer;
+    if (player.ano === 2) return imgs.bg_ra;
+    return imgs.bg_obelisk;
 }
 
 function renderButtons(buttonsHTML) {
@@ -247,7 +268,7 @@ function abrirBoosterInicial() {
 function iniciarIdleLoop() {
     if (player.hp <= 0) return dispararGameOver("Ficou sem Pontos de Vida.");
 
-    showDialog(`<b>${diasDaSemana[player.diaIndex]}!</b><br>O semestre está correndo. Administre seu tempo e cuidado com a aula de sexta!`, player.foco === 'duelo' ? imgs.duel : imgs.study);
+    showDialog(`<b>${diasDaSemana[player.diaIndex]}!</b><br>O semestre está correndo. Administre seu tempo!`, getDormBackground());
     
     renderButtons(`
         <button onclick="mudarFoco()" class="btn-primary">Mudar Foco (Atual: ${player.foco === 'duelo' ? 'Duelos' : 'Estudos'})</button>
@@ -341,8 +362,8 @@ function dispararEventoAleatorio() {
     let reqAtk = 5 + (player.mes * 4) + (player.semana * 2) + Math.floor(Math.random() * 5); 
     let custoFuga = 15 + (player.mes * 20);
 
-    showDialog(`<span style="color:var(--danger)">⚠️ EMBOSCADA!</span><br>Um veterano furioso bloqueia seu caminho! "Pague o pedágio de ${custoFuga} DP ou duele!"<br><br><i>A postura dele é intimidadora. Você não tem certeza se o seu ATK (${player.atk}) é suficiente para vencê-lo...</i>`, imgs.threat);
-    
+    showDialog(`<span style="color:var(--danger)">⚠️ EMBOSCADA!</span><br>Um veterano furioso bloqueia seu caminho! "Pague o pedágio de ${custoFuga} DP ou duele!"<br><br><i>A postura dele é intimidadora. Você não tem certeza se o seu ATK (${player.atk}) é suficiente para vencê-lo...</i>`, imgs.bg_abandoned);
+
     // CORREÇÃO: Declarando a variável botoes com 'let'
     let botoes = `
         <button onclick="resolverEventoAtaque(${reqAtk})" class="btn-danger">Arriscar Duelo</button>
@@ -438,7 +459,7 @@ function resolverEventoAtaque(requisito) {
 function eventoAulaSexta() {
     let t = bancoTrivia[Math.floor(Math.random() * bancoTrivia.length)];
     
-    showDialog(`<span style="color:var(--gold)">🎓 AULA DE SEXTA!</span><br>Prof. Crowler exige sua atenção:<br><br><b>${t.q}</b>`, imgs.study);
+    showDialog(`<span style="color:var(--gold)">🎓 AULA DE SEXTA!</span><br>Prof. Crowler exige sua atenção:<br><br><b>${t.q}</b>`, imgs.bg_academy);
     
     let botoes = t.opções.map((opc, index) => {
         return `<button onclick="responderTrivia(${index}, ${t.correta})">${opc}</button>`;

@@ -1,13 +1,20 @@
 const imgs = {
-    // Cenários de Fundo (Backgrounds)
+    hub: "https://images.ygoprodeck.com/images/cards/24094653.jpg", // Slifer Red Dorm
+    hub_ra: "https://images.ygoprodeck.com/images/cards/32338002.jpg", // Ra Yellow
+    hub_obelisk: "https://images.ygoprodeck.com/images/cards/10000000.jpg", // Obelisk Blue
+    study: "https://images.ygoprodeck.com/images/cards/38033121.jpg",
+    duel: "https://images.ygoprodeck.com/images/cards/46986414.jpg",
+    shop: "https://images.ygoprodeck.com/images/cards/55144522.jpg",
+    threat: "https://images.ygoprodeck.com/images/cards/70781052.jpg",
     bg_slifer: "assets/images/slifer_red_dorm2.jpeg",
     bg_ra: "assets/images/ra_yellow_dorm.webp",
     bg_obelisk: "assets/images/obelisk_blue_dorm.jpg",
     bg_abandoned: "assets/images/abandoned_dorms.jpg",
     bg_academy: "assets/images/duel_academy.jpeg",
     bg_forest: "assets/images/Forest.webp",
-
-    shop: "assets/images/pxArt.png" 
+    
+    shop: "assets/images/pxArt.png"
+    
 };
 
 const decksIniciais = [
@@ -24,8 +31,8 @@ const asesIniciais = [
 
 const espiritosIniciais = [
     { id: 'kuriboh', nome: 'Kuriboh', img: 'assets/images/kuriboh.png', desc: 'Pode te salvar de um golpe fatal.' },
-    { id: 'ojama', nome: 'Ojama Amarelo', emoji: '🤪', desc: 'Gera DP extra (quando não está reclamando).' },
-    { id: 'mokey', nome: 'Mokey Mokey', emoji: '☁️', desc: 'Bônus massivo de INT após perder HP.' }
+    { id: 'ojama', nome: 'Ojama Amarelo',img: 'assets/images/ojama_yellow.jpeg', desc: 'Gera DP extra (quando não está reclamando).' },
+    { id: 'mokey', nome: 'Mokey Mokey', img: 'assets/images/mokey_mokey.png', desc: 'Bônus massivo de INT após perder HP.' }
 ];
 
 const diasDaSemana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];

@@ -50,11 +50,20 @@
         <button onclick="abrirInventario()" style="padding: 5px 10px; font-size: 12px; background: #8e44ad; margin-left: auto;">🎒 Inventário</button>
     </div>
 
-    <!-- Modal de Inventário -->
-    <div id="modal-inventario" style="display: none; position: absolute; top: 10%; left: 5%; width: 90%; height: 80%; background: rgba(15,15,15,0.95); border: 2px solid var(--gold); border-radius: 10px; z-index: 100; padding: 15px; box-sizing: border-box; overflow-y: auto;">
-        <h2 style="margin-top: 0;">Sua Mochila</h2>
-        <div id="inv-conteudo" style="font-size: 14px; margin-bottom: 20px;"></div>
-        <button onclick="fecharInventario()" class="btn-primary" style="width: 100%;">Fechar Mochila</button>
+    <!-- Modal de Inventário (Estilo Mochila GBA) -->
+    <div id="modal-inventario" style="display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: #1a1a1a; border: 3px solid var(--gold); border-radius: 10px; z-index: 100; box-sizing: border-box; flex-direction: column;">
+        
+        <!-- Abas da Mochila -->
+        <div style="display: flex; background: #333; border-bottom: 2px solid var(--gold); border-radius: 7px 7px 0 0; overflow: hidden;">
+            <button onclick="renderizarAbaInv('consumiveis')" id="aba-consumiveis" style="flex:1; border:none; border-radius:0; background:#27ae60; font-size:12px;">🥪 Lanches</button>
+            <button onclick="renderizarAbaInv('reliquias')" id="aba-reliquias" style="flex:1; border:none; border-radius:0; background:#444; font-size:12px;">🎴 Cartas</button>
+            <button onclick="renderizarAbaInv('equipamentos')" id="aba-equipamentos" style="flex:1; border:none; border-radius:0; background:#444; font-size:12px;">🛡️ Equips</button>
+        </div>
+
+        <!-- Conteúdo Dinâmico -->
+        <div id="inv-conteudo" style="flex-grow: 1; padding: 15px; overflow-y: auto; font-size: 14px;"></div>
+        
+        <button onclick="fecharInventario()" class="btn-primary" style="margin: 10px; border-radius: 5px;">Fechar Mochila</button>
     </div>
     
     <!-- Barra de Progresso do Dia -->

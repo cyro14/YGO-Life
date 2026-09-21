@@ -2,15 +2,16 @@
 
 // Estado Global do Jogador
 let player = {
-    name: "", deck: "", spirit: "",
+    name: "", deck: "", ace: "", spirit: "", dormitorio: "Slifer Vermelho",
     hp: 3, maxHp: 3, dp: 0, atk: 0, int: 0,
     diaIndex: 0, semana: 1, mes: 1, ano: 1, 
     foco: 'duelo',
-    reliquias: [],
-    equipamentos: [],
-    consumiveis: [],
-    parceiroAtivo: null
+    reliquias: [], equipamentos: [], consumiveis: [],
+    equipados: { disco: null, deckbox: null }, // Slots de equipamento
+    amizades: { syrus: 0, jaden: 0, bastion: 0, zane: 0 }
 };
+
+let abaAtual = 'consumiveis'; // Controla a aba aberta do inventário
 
 // Variáveis temporárias para a tela de criação
 let selecaoAtual = { deck: null, spirit: null };
@@ -489,55 +490,181 @@ function responderTrivia(escolha, correta) {
     }
 }
 
+// --- SISTEMA DE LOJA ---
 function acaoLoja() {
-    clearInterval(idleTimer); // Pausa o tempo do jogo
-    showDialog("Dona Dorothy: 'Temos lanches novos e algumas cartas raras hoje. O que vai levar?'", imgs.shop);
+    clearInterval(idleTimer); 
+    showDialog("Dona Dorothy: 'Bem-vindo! As prateleiras estão organizadas. O que procura?'", imgs.shop);
     renderButtons(`
-        <button onclick="comprarLoja('estragado', 30)" style="background:#8e44ad">Sanduíche Suspeito (30 DP)</button>
-        <button onclick="comprarLoja('ovo', 80)" style="background:#27ae60">Pão de Ovo Seguro (80 DP)</button>
-        <button onclick="comprarLoja('pote', 300)" style="background:#f1c40f; color:#000;">Relíquia: Pote da Ganância (300 DP)</button>
-        <button onclick="comprarLoja('reborn', 600)" style="background:#c0392b">Relíquia: Monster Reborn (600 DP)</button>
+        <button onclick="mostrarLojaCategoria('consumivel')" style="background:#27ae60">Comprar Lanches</button>
+        <button onclick="mostrarLojaCategoria('reliquia')" style="background:#8e44ad">Comprar Cartas (Mágicas/Armadilhas)</button>
+        <button onclick="mostrarLojaCategoria('equipamento')" style="background:#2980b9">Comprar Equipamentos</button>
         <button onclick="iniciarIdleLoop()">Sair da Loja</button>
     `);
 }
 
-function comprarLoja(item, custo) {
-    if (player.dp < custo) {
-        showDialog("Dona Dorothy: 'Você não tem DP suficiente para isso, querido.'", imgs.shop);
+function mostrarLojaCategoria(categoria) {
+    let itensCategoria = lojaItens.filter(i => i.tipo === categoria);
+    
+    let botoes = itensCategoria.map(i => {
+        // Verifica se o jogador já possui a relíquia ou equipamento único
+        let jaPossui = player.reliquias.includes(i.id) || player.equipamentos.includes(i.id);
+        let status = jaPossui ? "disabled" : "";
+        let texto = jaPossui ? "Esgotado" : `${i.custo} DP`;
+        
+        return `<button onclick="comprarLoja('${i.id}')" ${status} style="font-size: 12px; text-transform: none; text-align: left;">
+                    <b>${i.nome}</b> (${texto})<br><span style="font-size: 10px; color:#ccc;">${i.desc}</span>
+                </button>`;
+    }).join('');
+    
+    botoes += `<button onclick="acaoLoja()" style="background:#555">Voltar às Categorias</button>`;
+    renderButtons(botoes);
+}
+
+function comprarLoja(id) {
+    let item = lojaItens.find(i => i.id === id);
+    
+    if (player.dp < item.custo) {
+        showDialog(`Dona Dorothy: 'Você não tem DP suficiente para o ${item.nome}!'`, imgs.shop);
         return;
     }
 
-    player.dp -= custo;
+    player.dp -= item.custo;
 
-    if (item === 'estragado') {
-        if (Math.random() < 0.5) {
-            if (player.hp < player.maxHp) player.hp++;
-            showDialog("Foi uma delícia! Você recuperou 1 HP.", imgs.shop);
-        } else {
-            player.hp--;
-            showDialog("Ugh... O recheio estava vencido. Você perdeu 1 HP.", imgs.threat);
-        }
-    } else if (item === 'ovo') {
-        if (player.hp < player.maxHp) {
-            player.hp++;
-            showDialog("Você comeu na hora e recuperou 1 HP.", imgs.shop);
-        } else {
-            player.consumiveis.push({ id: 'ovo', nome: 'Pão de Ovo Seguro' });
-            showDialog("Seu HP está cheio! Você guardou o Pão de Ovo na mochila.", imgs.shop);
-        }
-    } else if (item === 'pote') {
-        if(!player.reliquias.includes('pote')) player.reliquias.push('pote');
-        showDialog("Você comprou o Pote da Ganância! Agora seus duelos geram +50% DP no modo Idle.", imgs.shop);
-    } else if (item === 'reborn') {
-        if(!player.reliquias.includes('reborn')) player.reliquias.push('reborn');
-        showDialog("Você comprou o Monster Reborn! Ele vai te salvar automaticamente de um golpe fatal.", imgs.shop);
+    if (item.tipo === 'consumivel') {
+        player.consumiveis.push(item.id);
+        showDialog(`Guardaste o <b>${item.nome}</b> na mochila.`, imgs.shop);
+    } else if (item.tipo === 'reliquia') {
+        player.reliquias.push(item.id);
+        showDialog(`Compraste a carta <b>${item.nome}</b>! Ela foi adicionada à tua Mão.`, imgs.shop);
+        renderizarMao(); // Correção: Atualiza a mão instantaneamente
+    } else if (item.tipo === 'equipamento') {
+        player.equipamentos.push(item.id);
+        showDialog(`Compraste <b>${item.nome}</b>! Vai à mochila para o equipares.`, imgs.shop);
     }
 
     updateHUD();
+    mostrarLojaCategoria(item.tipo); // Recarrega a vitrine
+}
+
+// --- SISTEMA DE INVENTÁRIO (ESTILO GBA) ---
+function abrirInventario() {
+    document.getElementById('modal-inventario').style.display = 'flex';
+    renderizarAbaInv(abaAtual);
+}
+
+function fecharInventario() {
+    document.getElementById('modal-inventario').style.display = 'none';
+}
+
+function renderizarAbaInv(aba) {
+    abaAtual = aba;
+    let cont = document.getElementById('inv-conteudo');
     
-    if (player.hp <= 0) {
-        renderButtons(`<button onclick="checarMorte()">Continuar</button>`);
+    // Atualiza cores das abas
+    ['consumiveis', 'reliquias', 'equipamentos'].forEach(a => {
+        document.getElementById(`aba-${a}`).style.background = (a === aba) ? '#27ae60' : '#444';
+    });
+
+    let html = '';
+
+    if (aba === 'consumiveis') {
+        html += `<p style="color:var(--gold); font-weight:bold;">🥪 Bolso de Lanches</p>`;
+        if (player.consumiveis.length === 0) html += `<i>Vazio</i>`;
+        player.consumiveis.forEach((itemId, index) => {
+            let item = lojaItens.find(i => i.id === itemId);
+            html += `<div style="background:#222; padding:8px; margin-bottom:5px; border-radius:5px; border:1px solid #555; display:flex; justify-content:space-between; align-items:center;">
+                        <span>${item.nome}</span>
+                        <button onclick="usarConsumivel(${index})" style="padding: 5px; font-size: 11px;">Consumir</button>
+                     </div>`;
+        });
+    
+    } else if (aba === 'reliquias') {
+        html += `<p style="color:var(--gold); font-weight:bold;">🎴 Estojo de Cartas (Na Mão)</p>`;
+        if (player.reliquias.length === 0) html += `<i>Nenhuma magia ou armadilha na mão.</i>`;
+        player.reliquias.forEach(itemId => {
+            let item = lojaItens.find(i => i.id === itemId);
+            html += `<div style="background:#222; padding:8px; margin-bottom:5px; border-radius:5px; border:1px solid #555;">
+                        <b>${item.nome}</b><br><span style="font-size:11px; color:#aaa;">${item.desc}</span>
+                     </div>`;
+        });
+    
+    } else if (aba === 'equipamentos') {
+        // Layout de Personagem à esquerda, Lista à direita
+        let imgDisco = player.equipados.disco ? lojaItens.find(i => i.id === player.equipados.disco).nome : "Nenhum";
+        let imgDeckbox = player.equipados.deckbox ? lojaItens.find(i => i.id === player.equipados.deckbox).nome : "Nenhuma";
+        
+        html += `
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1; background:#111; border:1px solid var(--gold); border-radius:5px; padding:10px; text-align:center;">
+                <div style="width:60px; height:60px; background:#333; border-radius:30px; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:24px;">👤</div>
+                <div style="font-size:11px; color:#aaa; margin-bottom:5px;"><b>DISCO:</b><br>${imgDisco}</div>
+                <div style="font-size:11px; color:#aaa;"><b>DECKBOX:</b><br>${imgDeckbox}</div>
+            </div>
+            
+            <div style="flex:2;">
+                <p style="margin-top:0; color:var(--gold); font-weight:bold;">Seus Equipamentos</p>
+        `;
+        
+        if (player.equipamentos.length === 0) html += `<i>Você não comprou equipamentos.</i>`;
+        player.equipamentos.forEach(itemId => {
+            let item = lojaItens.find(i => i.id === itemId);
+            let estaEquipado = (player.equipados.disco === itemId || player.equipados.deckbox === itemId);
+            let btnAcao = estaEquipado 
+                ? `<button disabled style="padding:5px; font-size:10px; background:#555;">Equipado</button>` 
+                : `<button onclick="equiparItem('${itemId}')" style="padding:5px; font-size:10px; background:#2980b9;">Equipar</button>`;
+                
+            html += `<div style="background:#222; padding:8px; margin-bottom:5px; border-radius:5px; border:1px solid #555; display:flex; justify-content:space-between; align-items:center;">
+                        <div><b>${item.nome}</b><br><span style="font-size:10px; color:#aaa;">${item.desc}</span></div>
+                        ${btnAcao}
+                     </div>`;
+        });
+        
+        html += `</div></div>`;
     }
+
+    cont.innerHTML = html;
+}
+
+// Lógica de Consumo (Otimizada)
+function usarConsumivel(index) {
+    let itemId = player.consumiveis[index];
+    if (itemId === 'sanduiche_ovo' && player.hp >= player.maxHp) {
+        alert("Seu HP já está no máximo!");
+        return;
+    }
+    
+    if (itemId === 'sanduiche_ovo') player.hp++;
+    else if (itemId === 'sanduiche_estragado') player.hp += Math.random() < 0.5 ? 1 : -1;
+    else if (itemId === 'sanduiche_dourado') player.hp = player.maxHp; // + Amizade seria adicionada aqui
+    
+    player.consumiveis.splice(index, 1);
+    updateHUD();
+    renderizarAbaInv('consumiveis');
+    
+    if(player.hp <= 0) {
+        fecharInventario();
+        checarMorte();
+    }
+}
+
+// Lógica de Equipar
+function equiparItem(itemId) {
+    let item = lojaItens.find(i => i.id === itemId);
+    
+    if (itemId.includes('disco')) {
+        player.equipados.disco = itemId;
+    } else if (itemId.includes('deckbox')) {
+        // Se já tinha deckbox antes, removemos o HP máximo antigo (para não acumular infinitamente)
+        if (player.equipados.deckbox === 'deckbox_couro') player.maxHp -= 1; 
+        
+        player.equipados.deckbox = itemId;
+        
+        // Aplica os buffs do novo equipamento
+        if (itemId === 'deckbox_couro') player.maxHp += 1;
+    }
+    
+    updateHUD();
+    renderizarAbaInv('equipamentos');
 }
 
 // --- FIM DE JOGO ---

@@ -20,13 +20,13 @@ const imgs = {
 const decksIniciais = [
     { id: 'hero', nome: 'Herói Elementar', baseAtk: 5, baseInt: 5, hp: 3, emoji: '🦸' },
     { id: 'roid', nome: 'Veículos Roid', baseAtk: 3, baseInt: 3, hp: 4, emoji: '🚁' },
-    { id: 'beast', nome: 'Bestas da Floresta', baseAtk: 8, baseInt: 2, hp: 3, emoji: '🐺' }
+    { id: 'koala', nome: 'Bestas da Floresta', baseAtk: 8, baseInt: 2, hp: 3, emoji: '🐺' }
 ];
 
 const asesIniciais = [
-    { id: 'avian', deckReq: 'hero', nome: 'E-Hero Avian', desc: 'Bônus passivo: +10% de ganho de INT.', emoji: '🦅' },
-    { id: 'gyroid', deckReq: 'roid', nome: 'Gyroid', desc: 'Bônus passivo: Reduz o custo da Loja em 10%.', emoji: '🚲' },
-    { id: 'koala', deckReq: 'beast', nome: 'Des Koala', desc: 'Bônus passivo: +5 DP fixos a cada duelo ganho no idle.', emoji: '🐨' }
+    { id: 'avian', deckReq: 'hero', nome: 'E-Hero Avian', desc: 'Bônus passivo: +10% de ganho de INT.', img: 'assets/images/avian.png'},
+    { id: 'gyroid', deckReq: 'roid', nome: 'Gyroid', desc: 'Bônus passivo: Reduz o custo da Loja em 10%.', img: 'assets/images/gyroid.jpeg' },
+    { id: 'koala', deckReq: 'koala', nome: 'Des Koala', desc: 'Bônus passivo: +5 DP fixos a cada duelo ganho no idle.', img: 'assets/images/des_koala.png' }
 ];
 
 const espiritosIniciais = [
@@ -123,7 +123,7 @@ const puzzlesExame = {
                 { texto: "Atacar o Rei Ojama diretamente", stat: 'atk', req: 0, correto: false, msg: "O Rei Ojama absorveu o ataque e sofres dano de recuo!" }
             ]
         },
-        beast: {
+        koala: {
             texto: "Chazz colocou 3 cartas viradas para baixo e invocou 'Ojama Amarelo'. É uma isca óbvia! O teu 'Des Koala' está pronto a agir.",
             opcoes: [
                 { texto: "Atacar com Força Máxima (Exige 60 ATK)", stat: 'atk', req: 60, correto: true, msg: "Eras tão forte que a Força Espelho dele não foi suficiente para te parar!" },

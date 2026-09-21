@@ -37,6 +37,12 @@
             <div class="selection-title">ESCOLHA SEU ESPÍRITO GUARDIÃO</div>
             <div class="card-grid" id="spirit-grid"></div>
         </div>
+        <div style="text-align: center; margin: 15px 0;">
+            <label style="cursor: pointer; color: #ccc; font-size: 14px; display: inline-flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="check-fullscreen" checked style="width: 18px; height: 18px; cursor: pointer;">
+                Jogar em Tela Cheia (Recomendado para Celulares e Blogs)
+            </label>
+        </div>
         
         <button id="btn-start" class="btn-primary" onclick="startGame()" disabled>Selecionar Cartas para Iniciar</button>
     </div>
@@ -49,6 +55,7 @@
         <span class="hud-int">🧠 INT: <span id="v-int">0</span></span>
         <button onclick="abrirInventario()" style="padding: 5px 10px; font-size: 12px; background: #8e44ad; margin-left: auto;">🎒 Inventário</button>
         <button onclick="abrirSocial()" style="padding: 5px 10px; font-size: 12px; background: #e74c3c; margin-left: 5px;">🤝 Social</button>
+        <button onclick="toggleFullScreen()" style="padding: 5px 10px; font-size: 14px; background: #34495e; margin-left: 5px;" title="Tela Cheia">⛶</button>
     </div>
 
     <!-- Modal de Inventário (Estilo Mochila GBA) -->

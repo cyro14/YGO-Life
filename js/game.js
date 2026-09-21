@@ -42,6 +42,31 @@ function renderizarMenuInicial() {
     `).join('');
 }
 
+// --- CONTROLE DE TELA CHEIA ---
+function toggleFullScreen() {
+    let elem = document.documentElement; // Pega a página inteira
+    
+    if (!document.fullscreenElement) {
+        // Tenta entrar em tela cheia
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+            elem.msRequestFullscreen();
+        }
+    } else {
+        // Tenta sair da tela cheia
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+            document.msExitFullscreen();
+        }
+    }
+}
+
 // Manipula o clique nos cards
 function selecionarOpcao(tipo, id) {
     selecaoAtual[tipo] = id;
@@ -389,6 +414,11 @@ function startGame() {
     ui.actions.style.display = 'flex';
     ui.hand.style.display = 'flex';
 
+    let checkFs = document.getElementById('check-fullscreen');
+    if (checkFs && checkFs.checked) {
+        toggleFullScreen();
+    }
+    
     updateHUD();
     abrirBoosterInicial();
 }

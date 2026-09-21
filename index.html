@@ -48,6 +48,7 @@
         <span class="hud-atk">⚔️ ATK: <span id="v-atk">0</span></span>
         <span class="hud-int">🧠 INT: <span id="v-int">0</span></span>
         <button onclick="abrirInventario()" style="padding: 5px 10px; font-size: 12px; background: #8e44ad; margin-left: auto;">🎒 Inventário</button>
+        <button onclick="abrirSocial()" style="padding: 5px 10px; font-size: 12px; background: #e74c3c; margin-left: 5px;">🤝 Social</button>
     </div>
 
     <!-- Modal de Inventário (Estilo Mochila GBA) -->
@@ -66,6 +67,15 @@
         <button onclick="fecharInventario()" class="btn-primary" style="margin: 10px; border-radius: 5px;">Fechar Mochila</button>
     </div>
     
+    <!-- Modal Social -->
+    <div id="modal-social" style="display: none; position: absolute; top: 10%; left: 5%; width: 90%; height: 80%; background: #1a1a1a; border: 3px solid #e74c3c; border-radius: 10px; z-index: 105; box-sizing: border-box; flex-direction: column;">
+        <div style="background: #e74c3c; color: white; padding: 10px; text-align: center; font-weight: bold; border-radius: 7px 7px 0 0;">
+            Rede de Amizades (PDA)
+        </div>
+        <div id="social-conteudo" style="flex-grow: 1; padding: 15px; overflow-y: auto; font-size: 14px;"></div>
+        <button onclick="fecharSocial()" class="btn-primary" style="margin: 10px; border-radius: 5px; background: #c0392b;">Fechar PDA</button>
+    </div>
+
     <!-- Barra de Progresso do Dia -->
     <div id="idle-progress-container">
         <div id="idle-progress-bar"></div>

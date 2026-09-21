@@ -8,7 +8,9 @@ let player = {
     foco: 'duelo',
     reliquias: [], equipamentos: [], consumiveis: [],
     equipados: { disco: null, deckbox: null }, // Slots de equipamento
-    amizades: { syrus: 0, jaden: 0, bastion: 0, zane: 0 }
+    parceirosDesbloqueados: [],
+    amizades: { syrus: 0, jaden: 0, bastion: 0, zane: 0 },
+    socialSemana: {}
 };
 
 let abaAtual = 'consumiveis'; // Controla a aba aberta do inventário
@@ -163,6 +165,150 @@ function usarConsumivel(index) {
     abrirInventario(); // Atualiza a tela do inventário
 }
 
+// --- SISTEMA SOCIAL (TAG FORCE) ---
+function abrirSocial() {
+    document.getElementById('modal-social').style.display = 'flex';
+    renderizarSocial();
+}
+
+function fecharSocial() {
+    document.getElementById('modal-social').style.display = 'none';
+}
+
+function renderizarSocial() {
+    let cont = document.getElementById('social-conteudo');
+    if (player.parceirosDesbloqueados.length === 0) {
+        cont.innerHTML = `<div style="text-align:center; color:#888; margin-top:50px;">Ainda não conheces ninguém. Continua a explorar!</div>`;
+        return;
+    }
+
+    let html = '';
+    player.parceirosDesbloqueados.forEach(id => {
+        let p = parceiros.find(x => x.id === id);
+        let coracoes = player.amizades[id];
+        let displayCoracoes = '❤️'.repeat(coracoes) + '🤍'.repeat(5 - coracoes);
+        
+        let statusBonus = coracoes >= 3 
+            ? `<span style="color:#27ae60; font-weight:bold;">Bônus Ativo</span>` 
+            : `<span style="color:#e74c3c;">Desbloqueia aos 3 ❤️</span>`;
+
+        // Verifica se já interagiu nesta semana
+        let interagiu = player.socialSemana[id] || { chat: false, gift: false };
+        
+        let btnChat = interagiu.chat 
+            ? `<button disabled style="flex:1; padding:5px; font-size:11px; background:#555;">Já Conversou</button>`
+            : `<button onclick="iniciarConversa('${id}')" style="flex:1; padding:5px; font-size:11px; background:#2980b9;">Conversar</button>`;
+            
+        let btnGift = (interagiu.gift || coracoes >= 5)
+            ? `<button disabled style="flex:1; padding:5px; font-size:11px; background:#555;">${coracoes >= 5 ? 'Amizade Máxima' : 'Já Presenteou'}</button>`
+            : `<button onclick="presentearParceiro('${id}')" style="flex:1; padding:5px; font-size:11px; background:#27ae60;">Lanche (100 DP)</button>`;
+
+        html += `
+        <div style="background:#222; padding:10px; margin-bottom:10px; border-radius:5px; border:1px solid #555; display:flex; gap:10px;">
+            <div style="width:60px; height:60px; background:#111; border:1px solid #444; border-radius:5px; overflow:hidden;">
+                <img src="${p.img}" style="width:100%; height:100%; object-fit:cover;">
+            </div>
+            <div style="flex:1;">
+                <b style="color:var(--gold);">${p.nome}</b> (${p.raridade})<br>
+                <div style="font-size:16px; margin: 5px 0;">${displayCoracoes}</div>
+                <div style="font-size:10px; color:#aaa;">${p.bonusDesc} (${statusBonus})</div>
+                <div style="margin-top:10px; display:flex; gap:5px;">${btnChat}${btnGift}</div>
+            </div>
+        </div>`;
+    });
+    cont.innerHTML = html;
+}
+
+function iniciarConversa(id) {
+    fecharSocial(); // Fecha o PDA para mostrar a conversa no palco principal
+    let p = parceiros.find(x => x.id === id);
+    
+    // Sorteia uma pergunta
+    let conv = bancoConversas[Math.floor(Math.random() * bancoConversas.length)];
+    
+    // Mistura as opções
+    let opcoes = [
+        { txt: conv.certa, correto: true },
+        { txt: conv.erradas[0], correto: false },
+        { txt: conv.erradas[1], correto: false }
+    ];
+    opcoes.sort(() => Math.random() - 0.5); 
+    
+    showDialog(`<b>${p.nome}</b> te faz uma pergunta:<br><br>"${conv.fala}"`, imgs.bg_academy, p.img);
+    
+    let botoesHTML = opcoes.map(opc => {
+        return `<button onclick="responderConversa('${id}', ${opc.correto})" class="btn-primary" style="margin-bottom:5px; font-size:12px; text-transform:none;">${opc.txt}</button>`;
+    }).join('');
+    
+    renderButtons(botoesHTML);
+}
+
+function responderConversa(id, acertou) {
+    let p = parceiros.find(x => x.id === id);
+    
+    if (!player.socialSemana[id]) player.socialSemana[id] = { chat: false, gift: false };
+    player.socialSemana[id].chat = true; // Bloqueia chat até semana que vem
+    
+    if (acertou) {
+        if (player.amizades[id] < 5) player.amizades[id]++;
+        aplicarPenalidadeZane(id);
+        updateHUD();
+        showDialog(`<b>${p.nome}:</b> "Exatamente! Pensamos da mesma forma."<br><br><span style="color:var(--success);">❤️ A amizade aumentou!</span>`, imgs.bg_academy, p.img);
+    } else {
+        showDialog(`<b>${p.nome}:</b> "Sério? Eu não concordo muito com isso..."<br><br><span style="color:var(--danger);">O clima ficou constrangedor. A amizade não mudou.</span>`, imgs.bg_academy, p.img);
+    }
+    
+    renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar</button>`);
+}
+
+function presentearParceiro(id) {
+    if (player.dp < 100) return;
+    
+    player.dp -= 100;
+    
+    if (!player.socialSemana[id]) player.socialSemana[id] = { chat: false, gift: false };
+    player.socialSemana[id].gift = true; // Bloqueia presente até semana que vem
+    
+    if (player.amizades[id] < 5) player.amizades[id]++;
+    
+    aplicarPenalidadeZane(id);
+    updateHUD();
+    renderizarSocial();
+}
+
+function aplicarPenalidadeZane(id) {
+    if (id === 'zane' && player.amizades[id] === 3) {
+        player.maxHp -= 2;
+        if (player.hp > player.maxHp) player.hp = player.maxHp;
+        alert("O treino com Zane é brutal. Desbloqueaste o bônus dele, mas perdeste 2 HP Máximo permanente!");
+        updateHUD();
+    }
+}
+
+// Verifica de forma rápida se um bónus está ativo
+function temBonus(id) {
+    return player.parceirosDesbloqueados.includes(id) && player.amizades[id] >= 3;
+}
+
+function dispararEventoSocial() {
+    let chance = Math.random();
+    if (chance < 0.8) return false; // 20% de chance de encontrar alguém
+
+    // Filtra quem pode ser encontrado no ano atual e que ainda não conheces
+    let possiveis = parceiros.filter(p => p.anoReq <= player.ano && !player.parceirosDesbloqueados.includes(p.id));
+    
+    if (possiveis.length === 0) return false;
+
+    clearInterval(idleTimer);
+    let novoAmigo = possiveis[Math.floor(Math.random() * possiveis.length)];
+    player.parceirosDesbloqueados.push(novoAmigo.id);
+
+    showDialog(`<span style="color:#2980b9">🤝 NOVO ENCONTRO!</span><br>Cruzaste com <b>${novoAmigo.nome}</b> no pátio da Academia! Agora tens o contacto dele no teu PDA. Aumenta a amizade para desbloquear o bónus passivo.`, imgs.bg_academy, novoAmigo.img);
+    
+    renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Cumprimentar e seguir caminho</button>`);
+    return true;
+}
+
 let idleTimer = null;
 let duracaoDiaMs = 2000; // 2 segundos = 1 dia no jogo (ajustável)
 
@@ -294,15 +440,24 @@ function processarFimDoDia() {
         let ganhoAtk = Math.floor(Math.random() * 3) + 1;
         let ganhoDp = Math.floor(Math.random() * 15) + 10;
         
-        // Modificador do Pote da Ganância
-        if (player.reliquias.includes('pote')) {
+        // Bónus Jaden (Dobra DP) e Zane (Dobra ATK)
+        if (temBonus('jaden')) ganhoDp *= 2; 
+        if (temBonus('zane')) ganhoAtk *= 2;
+        
+        // Modificador do Pote da Ganância (Atenção ao ID correto da carta)
+        if (player.reliquias.includes('pote_ganancia')) {
             ganhoDp = Math.floor(ganhoDp * 1.5);
         }
         
         player.atk += ganhoAtk;
         player.dp += ganhoDp;
     } else {
-        player.int += Math.floor(Math.random() * 4) + 2;
+        // CORREÇÃO: Faltava declarar e calcular o ganhoInt antes de multiplicar
+        let ganhoInt = Math.floor(Math.random() * 4) + 2;
+        
+        if (temBonus('bastion')) ganhoInt = Math.floor(ganhoInt * 1.5);
+        
+        player.int += ganhoInt; 
     }
 
     // 2. Avança o calendário
@@ -310,6 +465,7 @@ function processarFimDoDia() {
     if (player.diaIndex > 6) {
         player.diaIndex = 0; // Volta pra Segunda
         player.semana++;
+        player.socialSemana = {};
         if (player.semana > 4) {
             player.semana = 1;
             player.mes++;
@@ -328,9 +484,13 @@ function processarFimDoDia() {
         clearInterval(idleTimer);
         setTimeout(eventoAulaSexta, 100);
     } else if (diaAtual !== "Sábado" && diaAtual !== "Domingo") {
-        // 4. Se for um dia normal de aula, rola os dados para ver se sofre uma emboscada
+        
+        // 4. Se for um dia normal de aula, rola os dados para ver se sofre um evento aleatório
         if (dispararEventoAleatorio()) {
-            return; // Interrompe o processamento visual se o evento pausou o jogo
+            return; // Interrompe se sofreu emboscada
+        } 
+        else if (dispararEventoSocial()) {
+            return; // Interrompe se encontrou um parceiro
         }
         
         // Reseta a barra visual para o próximo dia se nada aconteceu
@@ -504,12 +664,13 @@ function acaoLoja() {
 
 function mostrarLojaCategoria(categoria) {
     let itensCategoria = lojaItens.filter(i => i.tipo === categoria);
+    let multiplicador = temBonus('syrus') ? 0.5 : 1;
     
     let botoes = itensCategoria.map(i => {
-        // Verifica se o jogador já possui a relíquia ou equipamento único
         let jaPossui = player.reliquias.includes(i.id) || player.equipamentos.includes(i.id);
+        let custoReal = Math.floor(i.custo * multiplicador);
         let status = jaPossui ? "disabled" : "";
-        let texto = jaPossui ? "Esgotado" : `${i.custo} DP`;
+        let texto = jaPossui ? "Esgotado" : `${custoReal} DP`;
         
         return `<button onclick="comprarLoja('${i.id}')" ${status} style="font-size: 12px; text-transform: none; text-align: left;">
                     <b>${i.nome}</b> (${texto})<br><span style="font-size: 10px; color:#ccc;">${i.desc}</span>
@@ -521,31 +682,32 @@ function mostrarLojaCategoria(categoria) {
 }
 
 function comprarLoja(id) {
-    let item = lojaItens.find(i => i.id === id);
+    let item = lojaItens.find(x => x.id === id); // Variável 'item' definida corretamente
+    let multiplicador = temBonus('syrus') ? 0.5 : 1;
+    let custoReal = Math.floor(item.custo * multiplicador); // Cálculo corrigido
     
-    if (player.dp < item.custo) {
-        showDialog(`Dona Dorothy: 'Você não tem DP suficiente para o ${item.nome}!'`, imgs.shop);
+    if (player.dp < custoReal) {
+        showDialog(`Dona Dorothy: 'Você não tem ${custoReal} DP suficiente para isso!'`, imgs.shop);
         return;
     }
 
-    player.dp -= item.custo;
+    player.dp -= custoReal;
 
     if (item.tipo === 'consumivel') {
         player.consumiveis.push(item.id);
         showDialog(`Guardaste o <b>${item.nome}</b> na mochila.`, imgs.shop);
     } else if (item.tipo === 'reliquia') {
         player.reliquias.push(item.id);
-        showDialog(`Compraste a carta <b>${item.nome}</b>! Ela foi adicionada à tua Mão.`, imgs.shop);
-        renderizarMao(); // Correção: Atualiza a mão instantaneamente
+        showDialog(`Compraste a carta <b>${item.nome}</b>!`, imgs.shop);
+        renderizarMao(); 
     } else if (item.tipo === 'equipamento') {
         player.equipamentos.push(item.id);
-        showDialog(`Compraste <b>${item.nome}</b>! Vai à mochila para o equipares.`, imgs.shop);
+        showDialog(`Compraste <b>${item.nome}</b>! Vá à mochila para equipar.`, imgs.shop);
     }
 
     updateHUD();
-    mostrarLojaCategoria(item.tipo); // Recarrega a vitrine
+    mostrarLojaCategoria(item.tipo); 
 }
-
 // --- SISTEMA DE INVENTÁRIO (ESTILO GBA) ---
 function abrirInventario() {
     document.getElementById('modal-inventario').style.display = 'flex';

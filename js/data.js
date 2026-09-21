@@ -57,6 +57,44 @@ const lojaItens = [
     { id: "forca_espelho", nome: "Força Espelho", tipo: "reliquia", subTipo: "armadilha", custo: 500, desc: "Ative durante uma emboscada para destruir o oponente e vencer." },
 ];
 
+// --- SISTEMA SOCIAL ---
+const parceiros = [
+    { 
+        id: 'syrus', nome: 'Syrus Truesdale', anoReq: 1, raridade: 'Comum', 
+        bonusDesc: 'Reduz o custo dos itens da loja pela metade.', img: 'assets/images/pxArt.png' 
+    },
+    { 
+        id: 'jaden', nome: 'Jaden Yuki', anoReq: 1, raridade: 'Raro', 
+        bonusDesc: 'Duelos automáticos no idle geram o dobro de DP.', img: 'assets/images/pxArt.png' 
+    },
+    { 
+        id: 'bastion', nome: 'Bastion Misawa', anoReq: 2, raridade: 'Épico', 
+        bonusDesc: '+50% de ganho de INT durante os focos de estudo.', img: 'assets/images/pxArt.png' 
+    },
+    { 
+        id: 'zane', nome: 'Zane Truesdale', anoReq: 3, raridade: 'Lenda', 
+        bonusDesc: 'Dobra o ganho de ATK, mas sofres -2 de HP máximo.', img: 'assets/images/pxArt.png' 
+    }
+];
+
+const bancoConversas = [
+    {
+        fala: "Qual você acha que é a qualidade mais importante de um duelista?",
+        certa: "Acreditar no Coração das Cartas.",
+        erradas: ["Comprar as cartas mais caras da loja.", "Humilhar o oponente sem dó."]
+    },
+    {
+        fala: "O que você faria se comprasse uma mão inicial péssima?",
+        certa: "Pensaria numa estratégia defensiva e manteria a calma.",
+        erradas: ["Desistiria do duelo na hora.", "Reclamaria que o meu deck me odeia."]
+    },
+    {
+        fala: "Qual é a melhor forma de se preparar para o Exame Prático?",
+        certa: "Duelar com amigos para testar a sinergia dos combos.",
+        erradas: ["Copiar o deck de alguém do Obelisco Azul.", "Subornar o Professor Crowler."]
+    }
+];
+
 const bancoTrivia = [
     { q: "Qual o Nível do Mago Negro?", opções: ["Nível 6", "Nível 7", "Nível 8"], correta: 1 },
     { q: "Quantos Pontos de Vida (PV) se começa em um duelo oficial de Batalha da Cidade?", opções: ["2000 PV", "4000 PV", "8000 PV"], correta: 1 },

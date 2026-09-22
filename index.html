@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,104 +8,195 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
+
 <body>
 
-<div id="game-container">
-    <!-- Tela de Criação -->
-    <div id="screen-creation" class="screen">
-        <h1>Duelist Idle Academy</h1>
-        <p class="subtitle">A Jornada do Rei dos Jogos</p>
-        
-        <div class="form-group" style="padding: 10px;">
-            <label>Seu Nome:</label>
-            <input type="text" id="playerName" value="Cyro" style="text-align: center;">
-        </div>
+    <div id="game-container">
+        <!-- 1. TELA DE MENU PRINCIPAL -->
+        <div id="screen-main-menu" class="screen"
+            style="display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200;">
+            <h1 style="font-size: 36px; margin-bottom: 0;">DUELIST IDLE ACADEMY</h1>
+            <p class="subtitle">A Jornada do Rei dos Jogos</p>
 
-        <div class="selection-section">
-            <div class="selection-title">ESCOLHA SEU DECK</div>
-            <div class="card-grid" id="deck-grid"></div>
-        </div>
-
-        <!-- NOVA SEÇÃO DO ÁS (Fica vazia até o deck ser clicado) -->
-        <div class="selection-section">
-            <div class="selection-title">SEU MONSTRO ÁS</div>
-            <div class="card-grid" id="ace-grid">
-                <p style="text-align: center; width: 100%; color: #555; grid-column: span 3; font-size: 12px;">Selecione um Deck primeiro...</p>
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 40px; width: 300px;">
+                <button onclick="continuarJogo()" id="btn-continuar" class="btn-primary"
+                    style="padding: 15px; font-size: 16px;">▶ Continuar (Último Save)</button>
+                <button onclick="abrirSlotsNovoJogo()" class="btn-primary"
+                    style="background: #2980b9; padding: 15px; font-size: 16px;">🆕 Novo Jogo</button>
+                <button onclick="abrirColecoes()" class="btn-primary"
+                    style="background: #8e44ad; padding: 15px; font-size: 16px;">📖 Coleções (Pokédex)</button>
             </div>
         </div>
 
-        <div class="selection-section">
-            <div class="selection-title">ESCOLHA SEU ESPÍRITO GUARDIÃO</div>
-            <div class="card-grid" id="spirit-grid"></div>
-        </div>
-        
-        <button id="btn-start" class="btn-primary" onclick="startGame()" disabled>Selecionar Cartas para Iniciar</button>
-    </div>
-
-    <!-- HUD Principal -->
-    <div id="hud">
-        <span class="hud-hp">❤️ HP: <span id="v-hp">3</span></span>
-        <span class="hud-dp">🪙 DP: <span id="v-dp">0</span></span>
-        <span class="hud-atk">⚔️ ATK: <span id="v-atk">0</span></span>
-        <span class="hud-int">🧠 INT: <span id="v-int">0</span></span>
-        <button onclick="abrirInventario()" style="padding: 5px 10px; font-size: 12px; background: #8e44ad; margin-left: auto;">🎒 Inventário</button>
-    </div>
-
-    <!-- Modal de Inventário -->
-    <div id="modal-inventario" style="display: none; position: absolute; top: 10%; left: 5%; width: 90%; height: 80%; background: rgba(15,15,15,0.95); border: 2px solid var(--gold); border-radius: 10px; z-index: 100; padding: 15px; box-sizing: border-box; overflow-y: auto;">
-        <h2 style="margin-top: 0;">Sua Mochila</h2>
-        <div id="inv-conteudo" style="font-size: 14px; margin-bottom: 20px;"></div>
-        <button onclick="fecharInventario()" class="btn-primary" style="width: 100%;">Fechar Mochila</button>
-    </div>
-    
-    <!-- Barra de Progresso do Dia -->
-    <div id="idle-progress-container">
-        <div id="idle-progress-bar"></div>
-    </div>
-
-    <!-- Palco / Área Visual -->
-    <div id="stage">
-        <div id="stage-overlay">Mês 1 - Semana 1 - <span id="v-dia">Segunda-feira</span></div>
-        <div id="foco-overlay">Foco: ⚔️ Duelos</div>
-        <img id="stage-image" src="" alt="Cenário">
-    </div>
-
-    <!-- Palco / Área Visual -->
-    <div id="stage">
-        <div id="stage-overlay">...</div>
-        <div id="foco-overlay">...</div>
-        <img id="stage-image" src="" alt="Cenário">
-    </div>
-
-    <!-- MÃO DO JOGADOR (Fica acima dos diálogos) -->
-    <div id="player-hand" style="display: none; background: #111; padding: 10px; gap: 10px; border-top: 2px solid var(--gold); overflow-x: auto; flex-wrap: nowrap;">
-        <!-- Cartas aparecerão aqui -->
-    </div>
-
-    <!-- Caixas de Interação -->
-    <div id="dialog-box"></div>
-    <div id="action-panel"></div>
-
-    <!-- Tela Final (Fim de Jogo) -->
-    <div id="screen-ending" class="screen" style="display: none;">
-        <h2>Resultado da Carreira</h2>
-        <div id="id-card">
-            <div class="id-title">Licença de Duelista</div>
-            <div class="id-stats">
-                <div>👤 Nome: <span id="id-name"></span></div>
-                <div>🎴 Deck: <span id="id-deck"></span></div>
-                <div>⚔️ ATK: <span id="id-atk"></span></div>
-                <div>🧠 INT: <span id="id-int"></span></div>
-                <div>🎓 Status: <span id="id-year"></span></div>
+        <!-- 2. MODAL DE SLOTS (Novo Jogo) -->
+        <div id="modal-slots"
+            style="display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 320px; background: #1a1a1a; border: 3px solid #2980b9; border-radius: 10px; z-index: 210; padding: 20px; box-sizing: border-box; flex-direction: column; text-align: center;">
+            <h2 style="color: #3498db; margin-top: 0;">Escolha um Slot</h2>
+            <div id="slots-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
             </div>
-            <div class="id-rank" id="id-rank-title">Eliminado</div>
+            <button onclick="fecharSlots()" class="btn-primary" style="background: #555;">Cancelar</button>
         </div>
-        <button onclick="location.reload()">Jogar Novamente</button>
-    </div>
-</div>
 
-<!-- Importação dos Scripts (Ordem importa!) -->
-<script src="js/data.js"></script>
-<script src="js/game.js"></script>
+        <!-- 3. MODAL DE COLEÇÕES (Pokédex) -->
+        <div id="modal-colecoes"
+            style="display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: #111; border: 3px solid #8e44ad; border-radius: 10px; z-index: 210; box-sizing: border-box; flex-direction: column;">
+            <div
+                style="background: #8e44ad; color: white; padding: 15px; text-align: center; font-weight: bold; border-radius: 7px 7px 0 0; display: flex; justify-content: space-between;">
+                <span>📚 Enciclopédia de Duelista</span>
+                <span id="pokedex-progresso">0/0</span>
+            </div>
+            <div id="colecoes-conteudo"
+                style="flex-grow: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start;">
+            </div>
+            <button onclick="fecharColecoes()" class="btn-primary"
+                style="margin: 10px; border-radius: 5px; background: #555;">Voltar ao Menu</button>
+        </div>
+
+        <!-- Tela de Criação -->
+        <div id="screen-creation" class="screen" style="display: none;">
+            <h1>Duelist Idle Academy</h1>
+            <p class="subtitle">A Jornada do Rei dos Jogos</p>
+
+            <div class="form-group" style="padding: 10px;">
+                <label>Seu Nome:</label>
+                <input type="text" id="playerName" value="Cyro" style="text-align: center;">
+            </div>
+
+            <div class="selection-section">
+                <div class="selection-title">ESCOLHA SEU DECK</div>
+                <div class="card-grid" id="deck-grid"></div>
+            </div>
+
+            <!-- NOVA SEÇÃO DO ÁS (Fica vazia até o deck ser clicado) -->
+            <div class="selection-section">
+                <div class="selection-title">SEU MONSTRO ÁS</div>
+                <div class="card-grid" id="ace-grid">
+                    <p style="text-align: center; width: 100%; color: #555; grid-column: span 3; font-size: 12px;">
+                        Selecione um Deck primeiro...</p>
+                </div>
+            </div>
+
+            <div class="selection-section">
+                <div class="selection-title">ESCOLHA SEU ESPÍRITO GUARDIÃO</div>
+                <div class="card-grid" id="spirit-grid"></div>
+            </div>
+            <div style="text-align: center; margin: 15px 0;">
+                <label
+                    style="cursor: pointer; color: #ccc; font-size: 14px; display: inline-flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="check-fullscreen" checked
+                        style="width: 18px; height: 18px; cursor: pointer;">
+                    Jogar em Tela Cheia (Recomendado para Celulares e Blogs)
+                </label>
+            </div>
+
+            <button id="btn-start" class="btn-primary" onclick="startGame()" disabled>Selecionar Cartas para
+                Iniciar</button>
+        </div>
+
+        <!-- HUD Principal -->
+        <div id="hud">
+            <span class="hud-hp">❤️ HP: <span id="v-hp">3</span></span>
+            <span class="hud-dp">🪙 DP: <span id="v-dp">0</span></span>
+            <span class="hud-atk">⚔️ ATK: <span id="v-atk">0</span></span>
+            <span class="hud-int">🧠 INT: <span id="v-int">0</span></span>
+            <button onclick="abrirInventario()"
+                style="padding: 5px 10px; font-size: 12px; background: #8e44ad; margin-left: auto;">🎒
+                Inventário</button>
+            <button onclick="abrirSocial()"
+                style="padding: 5px 10px; font-size: 12px; background: #e74c3c; margin-left: 5px;">🤝 Social</button>
+            <button onclick="toggleFullScreen()"
+                style="padding: 5px 10px; font-size: 14px; background: #34495e; margin-left: 5px;"
+                title="Tela Cheia">⛶</button>
+            <button id="btn-home" onclick="voltarAoMenu()"
+                style="padding: 5px 10px; font-size: 14px; background: #c0392b; margin-left: 5px;"
+                title="Voltar ao Menu">🏠</button>
+        </div>
+
+        <!-- Modal de Inventário (Estilo Mochila GBA) -->
+        <div id="modal-inventario"
+            style="display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: #1a1a1a; border: 3px solid var(--gold); border-radius: 10px; z-index: 100; box-sizing: border-box; flex-direction: column;">
+
+            <!-- Abas da Mochila -->
+            <div
+                style="display: flex; background: #333; border-bottom: 2px solid var(--gold); border-radius: 7px 7px 0 0; overflow: hidden;">
+                <button onclick="renderizarAbaInv('consumiveis')" id="aba-consumiveis"
+                    style="flex:1; border:none; border-radius:0; background:#27ae60; font-size:12px;">🥪
+                    Lanches</button>
+                <button onclick="renderizarAbaInv('reliquias')" id="aba-reliquias"
+                    style="flex:1; border:none; border-radius:0; background:#444; font-size:12px;">🎴 Cartas</button>
+                <button onclick="renderizarAbaInv('equipamentos')" id="aba-equipamentos"
+                    style="flex:1; border:none; border-radius:0; background:#444; font-size:12px;">🛡️ Equips</button>
+            </div>
+
+            <!-- Conteúdo Dinâmico -->
+            <div id="inv-conteudo" style="flex-grow: 1; padding: 15px; overflow-y: auto; font-size: 14px;"></div>
+
+            <button onclick="fecharInventario()" class="btn-primary" style="margin: 10px; border-radius: 5px;">Fechar
+                Mochila</button>
+        </div>
+
+        <!-- Modal Social -->
+        <div id="modal-social"
+            style="display: none; position: absolute; top: 10%; left: 5%; width: 90%; height: 80%; background: #1a1a1a; border: 3px solid #e74c3c; border-radius: 10px; z-index: 105; box-sizing: border-box; flex-direction: column;">
+            <div
+                style="background: #e74c3c; color: white; padding: 10px; text-align: center; font-weight: bold; border-radius: 7px 7px 0 0;">
+                Rede de Amizades (PDA)
+            </div>
+            <div id="social-conteudo" style="flex-grow: 1; padding: 15px; overflow-y: auto; font-size: 14px;"></div>
+            <button onclick="fecharSocial()" class="btn-primary"
+                style="margin: 10px; border-radius: 5px; background: #c0392b;">Fechar PDA</button>
+        </div>
+
+        <!-- Barra de Progresso do Dia -->
+        <div id="idle-progress-container">
+            <div id="idle-progress-bar"></div>
+        </div>
+
+        <!-- Palco / Área Visual -->
+        <div id="stage">
+            <div id="stage-overlay">Mês 1 - Semana 1 - <span id="v-dia">Segunda-feira</span></div>
+            <div id="foco-overlay">Foco: ⚔️ Duelos</div>
+            <img id="stage-image" src="" alt="Cenário">
+        </div>
+
+        <!-- Palco / Área Visual -->
+        <div id="stage">
+            <div id="stage-overlay">...</div>
+            <div id="foco-overlay">...</div>
+            <img id="stage-image" src="" alt="Cenário">
+        </div>
+
+        <!-- MÃO DO JOGADOR (Fica acima dos diálogos) -->
+        <div id="player-hand"
+            style="display: none; background: #111; padding: 10px; gap: 10px; border-top: 2px solid var(--gold); overflow-x: auto; flex-wrap: nowrap;">
+            <!-- Cartas aparecerão aqui -->
+        </div>
+
+        <!-- Caixas de Interação -->
+        <div id="dialog-box"></div>
+        <div id="action-panel"></div>
+
+        <!-- Tela Final (Fim de Jogo) -->
+        <div id="screen-ending" class="screen" style="display: none;">
+            <h2>Resultado da Carreira</h2>
+            <div id="id-card">
+                <div class="id-title">Licença de Duelista</div>
+                <div class="id-stats">
+                    <div>👤 Nome: <span id="id-name"></span></div>
+                    <div>🎴 Deck: <span id="id-deck"></span></div>
+                    <div>⚔️ ATK: <span id="id-atk"></span></div>
+                    <div>🧠 INT: <span id="id-int"></span></div>
+                    <div>🎓 Status: <span id="id-year"></span></div>
+                </div>
+                <div class="id-rank" id="id-rank-title">Eliminado</div>
+            </div>
+            <button onclick="location.reload()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <!-- Importação dos Scripts (Ordem importa!) -->
+    <script src="js/data.js"></script>
+    <script src="js/game.js"></script>
 </body>
+
 </html>

@@ -131,7 +131,35 @@ const puzzlesExame = {
                 { texto: "Invocar mais monstros para ajudar", stat: 'int', req: 0, correto: false, msg: "Ele ativou 'Tributo Torrencial' e limpou todo o teu campo!" }
             ]
         }
+    },
+    2: { 
+        bossName: "Bastion Misawa",
+        bossImg: "assets/images/pxArt.png", 
+        hero: {
+            texto: "Bastion calculou as suas jogadas e invocou o 'Dragão da Água' (2800 ATK), reduzindo o ATK do seu 'Homem-Pássaro Chama' a 0 pela habilidade natural! Você tem 'Polimerização' e 'Explosão de Herói' na mão.",
+            opcoes: [
+                { texto: "Fundir um novo Herói imune (Exige 250 ATK)", stat: 'atk', req: 250, correto: true, msg: "A força bruta do seu novo Herói Elementar superou os cálculos de Bastion e esmagou o Dragão da Água!" },
+                { texto: "Usar Explosão de Herói com precisão (Exige 130 INT)", stat: 'int', req: 130, correto: true, msg: "Você previu a tática dele! A magia destruiu o Dragão da Água contornando a diferença de ataque." },
+                { texto: "Atacar o Dragão da Água cegamente", stat: 'atk', req: 0, correto: false, msg: "Bastion riu da sua jogada ilógica. Seu monstro foi destruído e você levou dano massivo!" }
+            ]
+        },
+        roid: {
+            texto: "Bastion ativou cartas de Controle de Gravidade. Seu 'Gyroid' está preso e ele prepara um ataque letal matemático. Seu 'Super Veicroid - Conexão Furtiva' está pronto no Extra Deck.",
+            opcoes: [
+                { texto: "Invocar Super Veicroid e atropelar (Exige 250 ATK)", stat: 'atk', req: 250, correto: true, msg: "O motor do Veicroid superaqueceu e ignorou a gravidade, causando dano perfurante fatal!" },
+                { texto: "Ativar Zona de Conexão Veicroid (Exige 130 INT)", stat: 'int', req: 130, correto: true, msg: "Gênio! A Zona de Conexão tornou sua fusão imune aos efeitos de controle dele." },
+                { texto: "Esperar a fase final dele", stat: 'int', req: 0, correto: false, msg: "Você hesitou demais. As fórmulas de Bastion limparam seu campo antes do seu turno!" }
+            ]
+        },
+        beast: {
+            texto: "Bastion ativou 'Cilindro Mágico' no seu ataque principal! Você está prestes a tomar o reflexo do próprio dano, mas tem efeitos feras engatilhados.",
+            opcoes: [
+                { texto: "Invocar Babuíno Verde em resposta (Exige 250 ATK)", stat: 'atk', req: 250, correto: true, msg: "O rugido do Babuíno Verde cancelou a armadilha com pura brutalidade física, despedaçando o campo de Bastion!" },
+                { texto: "Redirecionar o dano com sabedoria (Exige 130 INT)", stat: 'int', req: 130, correto: true, msg: "Estratégia perfeita! Você absorveu o impacto e usou os efeitos de bestas no cemitério para contra-atacar." },
+                { texto: "Aceitar o dano passivamente", stat: 'int', req: 0, correto: false, msg: "O Cilindro Mágico refletiu 3000 de dano direto. A matemática de Bastion foi implacável!" }
+            ]
+        }
     }
-    // O Ano 2 e 3 podem ser adicionados aqui no futuro
+    
 };
 

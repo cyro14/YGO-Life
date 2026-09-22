@@ -38,23 +38,24 @@ const espiritosIniciais = [
 const diasDaSemana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
 
 const lojaItens = [
-    // --- PRODUTOS DA PRATELEIRA (O que o jogador clica para comprar) ---
-    { id: "compra_lanche", nome: "Sanduíche Surpresa", tipo: "consumivel", custo: 50, desc: "A embalagem é um mistério! Qual será o recheio?", naPrateleira: true },
-    { id: "compra_booster", nome: "Booster: Lenda Jovem", tipo: "reliquia", custo: 400, desc: "Rasgue o pacote para revelar 1 Carta (Magia/Armadilha).", naPrateleira: true },
-    { id: "deckbox_couro", nome: "Deckbox de Couro", tipo: "equipamento", custo: 250, desc: "+1 HP Máximo permanente.", naPrateleira: true },
-    { id: "disco_kaibacorp", nome: "Disco KaibaCorp", tipo: "equipamento", custo: 800, desc: "Equipamento de elite.", naPrateleira: true },
+    // --- PRODUTOS DA PRATELEIRA ---
+    { id: "compra_lanche", nome: "Sanduíche Surpresa", tipo: "consumivel", custo: 50, desc: "A embalagem é um mistério!", naPrateleira: true, img: "assets/images/pxArt.png" },
+    { id: "compra_booster_simples", nome: "Booster Simples (1 Carta)", tipo: "reliquia", custo: 150, desc: "Rasgue para revelar 1 Carta Mágica/Armadilha aleatória.", naPrateleira: true, img: "assets/images/pxArt.png" },
+    { id: "compra_booster_triplo", nome: "Booster Triplo (3 Cartas)", tipo: "reliquia", custo: 400, desc: "Pacotão promocional com 3 Cartas aleatórias!", naPrateleira: true, img: "assets/images/pxArt.png" },{ id: "deckbox_couro", nome: "Deckbox de Couro", tipo: "equipamento", custo: 250, desc: "+1 HP Máximo permanente.", naPrateleira: true, img: "assets/images/pxArt.png" },
+    { id: "disco_kaibacorp", nome: "Disco KaibaCorp", tipo: "equipamento", custo: 800, desc: "Equipamento de elite.", naPrateleira: true, img: "assets/images/pxArt.png" },
 
-    // --- RECOMPENSAS DOS LANCHES (Ocultos da vitrine) ---
-    { id: "sanduiche_estragado", nome: "Sanduíche Estragado", tipo: "consumivel_real", desc: "50% de curar ou perder 1 HP.", naPrateleira: false },
-    { id: "sanduiche_ovo", nome: "Sanduíche de Ovo", tipo: "consumivel_real", desc: "Recupera 1 HP garantido.", naPrateleira: false },
-    { id: "sanduiche_dourado", nome: "Sanduíche de Ovo Dourado", tipo: "consumivel_real", desc: "Lendário! Recupera TODO o HP.", naPrateleira: false },
+    // --- RECOMPENSAS DOS LANCHES ---
+    { id: "sanduiche_estragado", nome: "Sanduíche Estragado", tipo: "consumivel_real", desc: "50% de curar ou perder 1 HP.", naPrateleira: false, img: "assets/images/pxArt.png" },
+    { id: "sanduiche_ovo", nome: "Sanduíche de Ovo", tipo: "consumivel_real", desc: "Recupera 1 HP garantido.", naPrateleira: false, img: "assets/images/pxArt.png" },
+    { id: "sanduiche_dourado", nome: "Sanduíche de Ovo Dourado", tipo: "consumivel_real", desc: "Lendário! Recupera TODO o HP.", naPrateleira: false, img: "assets/images/pxArt.png" },
     
-    // --- RECOMPENSAS DOS BOOSTERS (Ocultos da vitrine) ---
-    { id: "pote_ganancia", nome: "Pote da Ganância", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Ganhe 200 DP imediatos.", naPrateleira: false, img: "assets/images/pot_of_greed.jpeg" },
+    // --- RECOMPENSAS DOS BOOSTERS ---
+    { id: "pote_ganancia", nome: "Pote da Ganância", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Ganhe 400 DP imediatos.", naPrateleira: false, img: "assets/images/pot_of_greed.jpeg" },
     { id: "monster_reborn", nome: "Monster Reborn", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Cura seu HP completamente.", naPrateleira: false, img: "assets/images/monster_reborn.png" },
     { id: "forca_espelho", nome: "Força Espelho", tipo: "reliquia_real", subTipo: "armadilha", desc: "Destrói o oponente numa emboscada.", naPrateleira: false, img: "assets/images/mirror_force.jpeg" },
-    { id: "espadas_luz", nome: "Espadas da Luz Reveladora", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Bloqueia emboscadas por 1 mês.", naPrateleira: false, img: "assets/images/swords_of_revealing.jpeg" },
-    { id: "tufao", nome: "Tufão Espacial Místico", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Dobra a eficácia de exploração.", naPrateleira: false, img: "assets/images/mystical_space.jpeg" }];
+    { id: "espadas_luz", nome: "Espadas da Luz Reveladora", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Bloqueia as próximas 3 emboscadas.", naPrateleira: false, img: "assets/images/swords_of_revealing.jpeg" },
+    { id: "tufao", nome: "Tufão Espacial Místico", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Destrói o teste do Crowler na Aula de Sexta.", naPrateleira: false, img: "assets/images/mystical_space.jpeg" }
+];
 
 // --- SISTEMA SOCIAL ---
 const parceiros = [

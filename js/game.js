@@ -10,8 +10,9 @@ let player = {
     equipados: { disco: null, deckbox: null }, // Slots de equipamento
     parceirosDesbloqueados: [],
     amizades: { syrus: 0, jaden: 0, bastion: 0, zane: 0 },
-    socialSemana: {}
+    socialSemana: {}, protecaoEspadas: 0
 };
+window.estadoEvento = null;
 
 // --- SISTEMA DE SAVE E VARIÁVEIS GLOBAIS ---
 let currentSlot = 1;
@@ -336,7 +337,7 @@ function abrirDetalhesCarta(relId, index) {
 
     // Define os botões dependendo do tipo da carta
     let acoesHtml = `<button onclick="fecharDetalhesCarta()" style="background: #555; padding: 10px; font-size: 13px; border: none; border-radius: 4px; cursor: pointer; color: white;">Guardar</button>`;
-    
+
     if (item.subTipo === 'armadilha') {
         // Armadilhas ficam na mão aguardando uma emboscada
         acoesHtml += `<button disabled style="background: #bc1c6c; padding: 10px; font-size: 13px; border: none; border-radius: 4px; color: white; opacity: 0.5;">Ativação Automática (Aguardando Evento)</button>`;
@@ -362,21 +363,44 @@ function tentarAtivarCarta(relId, index) {
         return;
     }
 
+    // Dentro da função tentarAtivarCarta(relId, index)...
+
     // Processa Magias Normais
     if (item.id === 'pote_ganancia') {
-        player.dp += 200;
-        showDialog(`Você ativou a Magia <b>Pote da Ganância</b> e comprou 200 DP diretamente para o seu bolso!`, imgs.hub);
-    } else if (item.id === 'monstro_reborn') {
+        player.dp += 400;
+        showDialog(`Você ativou a Magia <b>Pote da Ganância</b> e comprou 400 DP diretamente para o seu bolso!`, imgs.hub);
+        player.reliquias.splice(index, 1);
+    }
+    else if (item.id === 'monster_reborn') {
         if (player.hp >= player.maxHp) {
             alert("Seu HP já está no máximo!");
-            return; // Impede o gasto à toa
+            return;
         }
         player.hp = player.maxHp;
-        showDialog(`Você ativou <b>Monstro Reborn</b>! Uma aura de luz restaurou completamente seus Pontos de Vida.`, imgs.hub);
+        showDialog(`Você ativou <b>Monstro Reborn</b>! Você sente como se fosse recém-resuscitado.`, imgs.hub);
+        player.reliquias.splice(index, 1);
+    }
+    else if (item.id === 'tufao') {
+        if (window.estadoEvento === 'trivia') {
+            player.int += 15;
+            window.estadoEvento = null;
+            showDialog(`Você ativou <b>Tufão Espacial Místico</b>! A rajada de vento soprou os papéis do teste do Crowler para fora da janela. Ele ficou confuso e te deu a nota máxima de graça!`, imgs.bg_academy);
+            player.reliquias.splice(index, 1); // Consome a carta
+
+            player.diaIndex++; // Avança para Sábado
+            updateHUD();
+            renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Aproveitar Fim de Semana</button>`);
+        } else {
+            alert("Guarde isto! O Tufão Espacial Místico só pode ser ativado durante a Aula de Sexta do Prof. Crowler!");
+            return; // Impede o gasto à toa, retorna sem dar splice na carta
+        }
+    }
+    else if (item.id === 'espadas_luz') {
+        player.protecaoEspadas = 3;
+        showDialog(`Você ativou <b>Espadas da Luz Reveladora</b>! As lâminas flutuam ao seu redor, prontas para bloquear e afastar as próximas 3 emboscadas!`, imgs.bg_academy);
+        player.reliquias.splice(index, 1);
     }
 
-    // Consome a magia da mão após o uso
-    player.reliquias.splice(index, 1);
     updateHUD();
     renderizarMao();
 }
@@ -658,6 +682,7 @@ function startGame() {
 // --- MOTOR DE TEMPO (CALENDÁRIO) ---
 function iniciarIdleLoop() {
     travarMenu(false);
+    window.estadoEvento = null;
     if (player.hp <= 0) return dispararGameOver("Ficou sem Pontos de Vida.");
 
     showDialog(`<b>${diasDaSemana[player.diaIndex]}!</b><br>O semestre está correndo. Administre seu tempo!`, getDormBackground());
@@ -764,6 +789,16 @@ function dispararEventoAleatorio() {
     if (player.reliquias.includes('espadas_luz') && player.mes === 1) return false;
 
     if (chance < 0.7) return false;
+
+    if (player.protecaoEspadas > 0) {
+        player.protecaoEspadas--;
+        travarMenu(true);
+        clearInterval(idleTimer);
+        showDialog(`Um valentão saltou das sombras, mas as <b>Espadas da Luz Reveladora</b> formaram uma barreira intransponível! Ele fugiu cego.<br><br><i>(Cargas restantes das Espadas: ${player.protecaoEspadas})</i>`, imgs.bg_academy);
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar</button>`);
+        return true;
+    }
+
     travarMenu(true);
 
     clearInterval(idleTimer);
@@ -868,6 +903,7 @@ function resolverEventoAtaque(requisito) {
 function eventoAulaSexta() {
     travarMenu(true);
     let t = bancoTrivia[Math.floor(Math.random() * bancoTrivia.length)];
+    window.estadoEvento = 'trivia'; // Informa ao jogo que o Quiz começou
 
     showDialog(`<span style="color:var(--gold)">🎓 AULA DE SEXTA!</span><br>Prof. Crowler exige sua atenção:<br><br><b>${t.q}</b>`, imgs.bg_academy);
 
@@ -920,7 +956,7 @@ function mostrarLojaCategoria(categoria) {
     let botoes = itensCategoria.map(i => {
         // Lanches e Boosters agora podem ser comprados repetidamente. Só os equipamentos esgotam.
         let jaPossui = i.tipo === 'equipamento' ? player.equipamentos.includes(i.id) : false;
-        
+
         let custoReal = Math.floor(i.custo * multiplicador);
         let status = jaPossui ? "disabled" : "";
         let texto = jaPossui ? "Esgotado" : `${custoReal} DP`;
@@ -935,9 +971,9 @@ function mostrarLojaCategoria(categoria) {
 }
 
 function comprarLoja(id) {
-    let item = lojaItens.find(x => x.id === id); 
+    let item = lojaItens.find(x => x.id === id);
     let multiplicador = temBonus('syrus') ? 0.5 : 1;
-    let custoReal = Math.floor(item.custo * multiplicador); 
+    let custoReal = Math.floor(item.custo * multiplicador);
 
     if (player.dp < custoReal) {
         showDialog(`Dona Dorothy: 'Você não tem ${custoReal} DP suficiente para isso!'`, imgs.shop);
@@ -950,20 +986,37 @@ function comprarLoja(id) {
         let poolLanches = lojaItens.filter(i => i.tipo === 'consumivel_real');
         // Chance igual para todos por enquanto. Pode adicionar peso matemático no futuro.
         let sorteado = poolLanches[Math.floor(Math.random() * poolLanches.length)];
-        
+
         player.consumiveis.push(sorteado.id);
         registrarDesbloqueio(sorteado.id);
         showDialog(`Dona Dorothy te entregou o embrulho. Você abriu e era um <b>${sorteado.nome}</b>! Vai para a mochila.`, imgs.shop);
-    
-    } else if (id === 'compra_booster') {
+
+    } else if (id === 'compra_booster_simples') {
         let poolCartas = lojaItens.filter(i => i.tipo === 'reliquia_real');
-        let sorteado = poolCartas[Math.floor(Math.random() * poolCartas.length)];
-        
-        player.reliquias.push(sorteado.id);
-        registrarDesbloqueio(sorteado.id);
+        let sorteada = poolCartas[Math.floor(Math.random() * poolCartas.length)];
+
+        player.reliquias.push(sorteada.id);
+        registrarDesbloqueio(sorteada.id);
+
         renderizarMao();
-        showDialog(`Você rasgou o Booster Pack e tirou uma carta brilhante: <b>${sorteado.nome}</b>!`, imgs.shop);
-    
+        showDialog(`Você abriu o Booster Simples e tirou:<br><br>🎴 <b>${sorteada.nome}</b>`, imgs.shop);
+
+    } else if (id === 'compra_booster_triplo') {
+        let poolCartas = lojaItens.filter(i => i.tipo === 'reliquia_real');
+        let sorteados = [];
+
+        for (let i = 0; i < 3; i++) {
+            sorteados.push(poolCartas[Math.floor(Math.random() * poolCartas.length)]);
+        }
+
+        let nomesHTML = sorteados.map(s => {
+            player.reliquias.push(s.id);
+            registrarDesbloqueio(s.id);
+            return `🎴 <b>${s.nome}</b>`;
+        }).join('<br>');
+
+        renderizarMao();
+        showDialog(`Você rasgou o Booster Triplo e encontrou 3 cartas:<br><br>${nomesHTML}`, imgs.shop);
     } else if (item.tipo === 'equipamento') {
         player.equipamentos.push(item.id);
         registrarDesbloqueio(item.id);
@@ -1001,6 +1054,7 @@ function renderizarAbaInv(aba) {
         if (player.consumiveis.length === 0) html += `<i>Vazio</i>`;
         player.consumiveis.forEach((itemId, index) => {
             let item = lojaItens.find(i => i.id === itemId);
+            let imgUrl = item.img || 'assets/images/pxArt.png';
             html += `<div style="background:#222; padding:8px; margin-bottom:5px; border-radius:5px; border:1px solid #555; display:flex; justify-content:space-between; align-items:center;">
                         <span>${item.nome}</span>
                         <button onclick="usarConsumivel(${index})" style="padding: 5px; font-size: 11px;">Consumir</button>
@@ -1012,6 +1066,7 @@ function renderizarAbaInv(aba) {
         if (player.reliquias.length === 0) html += `<i>Nenhuma magia ou armadilha na mão.</i>`;
         player.reliquias.forEach(itemId => {
             let item = lojaItens.find(i => i.id === itemId);
+            let imgUrl = item.img || 'assets/images/pxArt.png';
             html += `<div style="background:#222; padding:8px; margin-bottom:5px; border-radius:5px; border:1px solid #555;">
                         <b>${item.nome}</b><br><span style="font-size:11px; color:#aaa;">${item.desc}</span>
                      </div>`;

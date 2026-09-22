@@ -38,23 +38,23 @@ const espiritosIniciais = [
 const diasDaSemana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
 
 const lojaItens = [
+    // --- PRODUTOS DA PRATELEIRA (O que o jogador clica para comprar) ---
+    { id: "compra_lanche", nome: "Sanduíche Surpresa", tipo: "consumivel", custo: 50, desc: "A embalagem é um mistério! Qual será o recheio?", naPrateleira: true },
+    { id: "compra_booster", nome: "Booster: Lenda Jovem", tipo: "reliquia", custo: 400, desc: "Rasgue o pacote para revelar 1 Carta (Magia/Armadilha).", naPrateleira: true },
+    { id: "deckbox_couro", nome: "Deckbox de Couro", tipo: "equipamento", custo: 250, desc: "+1 HP Máximo permanente.", naPrateleira: true },
+    { id: "disco_kaibacorp", nome: "Disco KaibaCorp", tipo: "equipamento", custo: 800, desc: "Equipamento de elite.", naPrateleira: true },
 
-    //consumiveis
-    { id: "sanduiche_estragado", nome: "Sanduíche Estragado", tipo: "consumivel", custo: 30, desc: "50% de curar ou perder 1 HP." },
-    { id: "sanduiche_ovo", nome: "Sanduíche de Ovo Padrão", tipo: "consumivel", custo: 80, desc: "Recupera 1 HP." },
-    { id: "sanduiche_dourado", nome: "Sanduíche Dourado", tipo: "consumivel", custo: 300, desc: "Restaura HP Máximo e +1 Amizade aleatória." },
+    // --- RECOMPENSAS DOS LANCHES (Ocultos da vitrine) ---
+    { id: "sanduiche_estragado", nome: "Sanduíche Estragado", tipo: "consumivel_real", desc: "50% de curar ou perder 1 HP.", naPrateleira: false },
+    { id: "sanduiche_ovo", nome: "Sanduíche de Ovo", tipo: "consumivel_real", desc: "Recupera 1 HP garantido.", naPrateleira: false },
+    { id: "sanduiche_dourado", nome: "Sanduíche de Ovo Dourado", tipo: "consumivel_real", desc: "Lendário! Recupera TODO o HP.", naPrateleira: false },
     
-    //equips
-    { id: "deckbox_couro", nome: "Deckbox de Couro", tipo: "equipamento", custo: 250, desc: "+1 HP Máximo permanente." },
-    { id: "disco_kaiba", nome: "Disco de Duelos KaibaCorp", tipo: "equipamento", custo: 800, desc: "Velocidade do Idle +25%." },
-    
-    
-    //reliquias
-    { id: "espadas_luz", nome: "Espadas da Luz Reveladora", tipo: "reliquia", subTipo: "magia_normal", custo: 350, desc: "Bloqueia emboscadas por 1 mês inteiro." },
-    { id: "tufao", nome: "Tufão Espacial Místico", tipo: "reliquia", custo: 250, desc: "Encontra o dobro de consumíveis em eventos." },
-    { id: "pote_ganancia", nome: "Pote da Ganância", tipo: "reliquia", subTipo: "magia_normal", custo: 400, desc: "Ative a qualquer momento para ganhar 200 DP imediatos." },
-    { id: "monster_reborn", nome: "Monster Reborn", tipo: "reliquia", subTipo: "magia_normal", custo: 600, desc: "Ative a qualquer momento para curar seu HP completamente." },
-    { id: "forca_espelho", nome: "Força Espelho", tipo: "reliquia", subTipo: "armadilha", custo: 500, desc: "Ative durante uma emboscada para destruir o oponente e vencer." },
+    // --- RECOMPENSAS DOS BOOSTERS (Ocultos da vitrine) ---
+    { id: "pote_ganancia", nome: "Pote da Ganância", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Ganhe 200 DP imediatos.", naPrateleira: false },
+    { id: "monster_reborn", nome: "Monster Reborn", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Cura seu HP completamente.", naPrateleira: false },
+    { id: "forca_espelho", nome: "Força Espelho", tipo: "reliquia_real", subTipo: "armadilha", desc: "Destrói o oponente numa emboscada.", naPrateleira: false },
+    { id: "espadas_luz", nome: "Espadas da Luz Reveladora", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Bloqueia emboscadas por 1 mês.", naPrateleira: false },
+    { id: "tufao", nome: "Tufão Espacial Místico", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Dobra a eficácia de exploração.", naPrateleira: false }
 ];
 
 // --- SISTEMA SOCIAL ---

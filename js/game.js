@@ -626,30 +626,6 @@ function startGame() {
     iniciarExameAdmissao();
 }
 
-function abrirBoosterInicial() {
-    // Filtra apenas itens do tipo 'reliquia'
-    let poolReliquias = lojaItens.filter(i => i.tipo === 'reliquia');
-
-    // Sorteia 3 relíquias aleatórias (Draft)
-    let draft = poolReliquias.sort(() => 0.5 - Math.random()).slice(0, 3);
-
-    let nomesHTML = [];
-
-    // CORREÇÃO: Garante que a variável se chama 'item'
-    draft.forEach(item => {
-        player.reliquias.push(item.id);
-        registrarDesbloqueio(item.id); // Regista a carta na dex global
-        nomesHTML.push(`🎴 <b>${item.nome}</b>: <span style="font-size:12px; color:#ccc;">${item.desc}</span>`);
-    });
-
-    showDialog(`<span style="color:var(--gold)">🎁 PACOTE DE MATRÍCULA!</span><br>O Reitor Sheppard entregou-te 3 cartas raras para iniciar a tua jornada. Constrói a tua estratégia em volta delas:<br><br>${nomesHTML.join('<br><br>')}`, imgs.bg_academy);
-
-    renderizarMao();
-    autoSave(); // Salva o jogo com o novo booster
-
-    renderButtons(`<button onclick="iniciarExameAdmissao()" class="btn-danger">Correr para a Arena de Exames!</button>`);
-}
-
 // --- MOTOR DE TEMPO (CALENDÁRIO) ---
 function iniciarIdleLoop() {
     travarMenu(false);
@@ -908,11 +884,14 @@ function acaoLoja() {
 }
 
 function mostrarLojaCategoria(categoria) {
-    let itensCategoria = lojaItens.filter(i => i.tipo === categoria);
+    // Filtra apenas o que é exibível na prateleira daquela categoria
+    let itensCategoria = lojaItens.filter(i => i.tipo === categoria && i.naPrateleira === true);
     let multiplicador = temBonus('syrus') ? 0.5 : 1;
 
     let botoes = itensCategoria.map(i => {
-        let jaPossui = player.reliquias.includes(i.id) || player.equipamentos.includes(i.id);
+        // Lanches e Boosters agora podem ser comprados repetidamente. Só os equipamentos esgotam.
+        let jaPossui = i.tipo === 'equipamento' ? player.equipamentos.includes(i.id) : false;
+        
         let custoReal = Math.floor(i.custo * multiplicador);
         let status = jaPossui ? "disabled" : "";
         let texto = jaPossui ? "Esgotado" : `${custoReal} DP`;
@@ -927,9 +906,9 @@ function mostrarLojaCategoria(categoria) {
 }
 
 function comprarLoja(id) {
-    let item = lojaItens.find(x => x.id === id); // Variável 'item' definida corretamente
+    let item = lojaItens.find(x => x.id === id); 
     let multiplicador = temBonus('syrus') ? 0.5 : 1;
-    let custoReal = Math.floor(item.custo * multiplicador); // Cálculo corrigido
+    let custoReal = Math.floor(item.custo * multiplicador); 
 
     if (player.dp < custoReal) {
         showDialog(`Dona Dorothy: 'Você não tem ${custoReal} DP suficiente para isso!'`, imgs.shop);
@@ -937,24 +916,36 @@ function comprarLoja(id) {
     }
 
     player.dp -= custoReal;
-    registrarDesbloqueio(item.id);
-    autoSave();
 
-    if (item.tipo === 'consumivel') {
-        player.consumiveis.push(item.id);
-        showDialog(`Guardaste o <b>${item.nome}</b> na mochila.`, imgs.shop);
-    } else if (item.tipo === 'reliquia') {
-        player.reliquias.push(item.id);
-        showDialog(`Compraste a carta <b>${item.nome}</b>!`, imgs.shop);
+    if (id === 'compra_lanche') {
+        let poolLanches = lojaItens.filter(i => i.tipo === 'consumivel_real');
+        // Chance igual para todos por enquanto. Pode adicionar peso matemático no futuro.
+        let sorteado = poolLanches[Math.floor(Math.random() * poolLanches.length)];
+        
+        player.consumiveis.push(sorteado.id);
+        registrarDesbloqueio(sorteado.id);
+        showDialog(`Dona Dorothy te entregou o embrulho. Você abriu e era um <b>${sorteado.nome}</b>! Vai para a mochila.`, imgs.shop);
+    
+    } else if (id === 'compra_booster') {
+        let poolCartas = lojaItens.filter(i => i.tipo === 'reliquia_real');
+        let sorteado = poolCartas[Math.floor(Math.random() * poolCartas.length)];
+        
+        player.reliquias.push(sorteado.id);
+        registrarDesbloqueio(sorteado.id);
         renderizarMao();
+        showDialog(`Você rasgou o Booster Pack e tirou uma carta brilhante: <b>${sorteado.nome}</b>!`, imgs.shop);
+    
     } else if (item.tipo === 'equipamento') {
         player.equipamentos.push(item.id);
+        registrarDesbloqueio(item.id);
         showDialog(`Compraste <b>${item.nome}</b>! Vá à mochila para equipar.`, imgs.shop);
     }
 
+    autoSave();
     updateHUD();
     mostrarLojaCategoria(item.tipo);
 }
+
 // --- SISTEMA DE INVENTÁRIO (ESTILO GBA) ---
 function abrirInventario() {
     document.getElementById('modal-inventario').style.display = 'flex';
@@ -1187,7 +1178,7 @@ function resolverPuzzleAdmissao(deckId, opcIndex) {
 
         registrarDesbloqueio(player.ace);
         registrarDesbloqueio(player.spirit);
-        
+
         showDialog(`<span style="color:var(--success)"><b>APROVADO!</b></span><br>${escolha.msg}<br><br>Você compensou a falta da prova teórica com um duelo brilhante. Devido à sua nota teórica zero, você foi designado para o dormitório de menor rank: <b>Slifer Vermelho</b>. Bem-vindo à Academia de Duelos!`, imgs.bg_academy);
 
         renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Ir para o Dormitório Slifer</button>`);

@@ -125,7 +125,7 @@ const puzzlesExame = {
                 { texto: "Apertar botões aleatórios dos Roids", stat: 'int', req: 0, correto: false, msg: "Seu Gyroid pifou no meio da arena. Reprovado sumariamente." }
             ]
         },
-        beast: {
+        koala: {
             texto: "Após zerar a prova teórica por falta de presença, Crowler exige um duelo prático perfeito. Ele encheu o campo de cartas viradas para baixo (armadilhas) para conter suas feras.",
             opcoes: [
                 { texto: "Investida brutal com 'Rei Tigre Wanghu' (Exige 8 ATK)", stat: 'atk', req: 8, correto: true, msg: "A agressividade do seu deck destruiu a estratégia dele antes que as armadilhas pudessem ser ativadas! Aprovado!" },
@@ -134,7 +134,7 @@ const puzzlesExame = {
             ]
         }
     },
-    
+
     1: { 
         bossName: "Chazz Princeton",
         bossImg: "assets/images/pxArt.png", // Podes trocar depois por uma imagem do Chazz

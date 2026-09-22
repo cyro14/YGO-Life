@@ -50,12 +50,11 @@ const lojaItens = [
     { id: "sanduiche_dourado", nome: "Sanduíche de Ovo Dourado", tipo: "consumivel_real", desc: "Lendário! Recupera TODO o HP.", naPrateleira: false },
     
     // --- RECOMPENSAS DOS BOOSTERS (Ocultos da vitrine) ---
-    { id: "pote_ganancia", nome: "Pote da Ganância", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Ganhe 200 DP imediatos.", naPrateleira: false },
-    { id: "monster_reborn", nome: "Monster Reborn", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Cura seu HP completamente.", naPrateleira: false },
-    { id: "forca_espelho", nome: "Força Espelho", tipo: "reliquia_real", subTipo: "armadilha", desc: "Destrói o oponente numa emboscada.", naPrateleira: false },
-    { id: "espadas_luz", nome: "Espadas da Luz Reveladora", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Bloqueia emboscadas por 1 mês.", naPrateleira: false },
-    { id: "tufao", nome: "Tufão Espacial Místico", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Dobra a eficácia de exploração.", naPrateleira: false }
-];
+    { id: "pote_ganancia", nome: "Pote da Ganância", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Ganhe 200 DP imediatos.", naPrateleira: false, img: "assets/images/pot_of_greed.jpeg" },
+    { id: "monster_reborn", nome: "Monster Reborn", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Cura seu HP completamente.", naPrateleira: false, img: "assets/images/monster_reborn.png" },
+    { id: "forca_espelho", nome: "Força Espelho", tipo: "reliquia_real", subTipo: "armadilha", desc: "Destrói o oponente numa emboscada.", naPrateleira: false, img: "assets/images/mirror_force.jpeg" },
+    { id: "espadas_luz", nome: "Espadas da Luz Reveladora", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Bloqueia emboscadas por 1 mês.", naPrateleira: false, img: "assets/images/swords_of_revealing.jpeg" },
+    { id: "tufao", nome: "Tufão Espacial Místico", tipo: "reliquia_real", subTipo: "magia_normal", desc: "Dobra a eficácia de exploração.", naPrateleira: false, img: "assets/images/mystical_space.jpeg" }];
 
 // --- SISTEMA SOCIAL ---
 const parceiros = [

@@ -147,6 +147,16 @@
                 style="margin: 10px; border-radius: 5px; background: #c0392b;">Fechar PDA</button>
         </div>
 
+        <!-- Modal de Detalhes da Carta (Ao clicar na mão) -->
+        <div id="modal-carta" style="display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 280px; background: #111; border: 2px solid var(--gold); border-radius: 8px; z-index: 300; padding: 15px; box-sizing: border-box; flex-direction: column; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.9);">
+            <img id="detalhe-carta-img" src="" style="width: 140px; height: 204px; object-fit: cover; margin: 0 auto 15px; border-radius: 4px; border: 2px solid #555;">
+            <h3 id="detalhe-carta-nome" style="margin: 0 0 8px; color: var(--gold); font-size: 16px;">Nome</h3>
+            <p id="detalhe-carta-desc" style="font-size: 13px; color: #ccc; margin-bottom: 20px;">Descrição da carta</p>
+            <div id="detalhe-carta-acoes" style="display: flex; gap: 10px; justify-content: center;">
+                <!-- Botões de Ativar e Cancelar aparecerão aqui -->
+            </div>
+        </div>
+
         <!-- Barra de Progresso do Dia -->
         <div id="idle-progress-container">
             <div id="idle-progress-bar"></div>

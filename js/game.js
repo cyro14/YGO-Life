@@ -310,18 +310,47 @@ function renderizarMao() {
 
     handDiv.innerHTML = player.reliquias.map((relId, index) => {
         let item = lojaItens.find(i => i.id === relId);
+        if (!item) return `<div style="color: red; font-size: 12px;">Erro: Carta ${relId}</div>`;
 
-        // CORREÇÃO: Se a carta não for encontrada no data.js, ele não trava o jogo
-        if (!item) return `<div style="color: red; font-size: 12px;">Erro: Carta ${relId} não existe</div>`;
+        // Verde para Magia, Rosa/Roxo para Armadilha
+        let bgCor = item.subTipo === 'armadilha' ? '#bc1c6c' : '#009966';
+        let imgUrl = item.img || 'assets/images/pxArt.png';
 
-        let bg = item.subTipo === 'armadilha' ? '#bc1c6c' : '#009966';
-
+        // Substitui o bloco de texto pela imagem da carta real
         return `
-            <div onclick="tentarAtivarCarta('${relId}', ${index})" style="background: ${bg}; border: 2px solid #fff; border-radius: 4px; padding: 10px; min-width: 100px; text-align: center; cursor: pointer; font-size: 12px; font-weight: bold; flex-shrink: 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); color: #fff;">
-                ${item.nome}
+            <div onclick="abrirDetalhesCarta('${relId}', ${index})" style="cursor: pointer; flex-shrink: 0; width: 55px; height: 80px; border-radius: 4px; overflow: hidden; border: 2px solid ${bgCor}; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);">
+                <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='assets/images/pxArt.png'">
             </div>
         `;
     }).join('');
+}
+
+function abrirDetalhesCarta(relId, index) {
+    let item = lojaItens.find(i => i.id === relId);
+    if (!item) return;
+
+    // Preenche as informações do modal
+    document.getElementById('detalhe-carta-img').src = item.img || 'assets/images/pxArt.png';
+    document.getElementById('detalhe-carta-nome').innerText = item.nome;
+    document.getElementById('detalhe-carta-desc').innerText = item.desc;
+
+    // Define os botões dependendo do tipo da carta
+    let acoesHtml = `<button onclick="fecharDetalhesCarta()" style="background: #555; padding: 10px; font-size: 13px; border: none; border-radius: 4px; cursor: pointer; color: white;">Guardar</button>`;
+    
+    if (item.subTipo === 'armadilha') {
+        // Armadilhas ficam na mão aguardando uma emboscada
+        acoesHtml += `<button disabled style="background: #bc1c6c; padding: 10px; font-size: 13px; border: none; border-radius: 4px; color: white; opacity: 0.5;">Ativação Automática (Aguardando Evento)</button>`;
+    } else {
+        // Magias podem ser ativadas no clique
+        acoesHtml += `<button onclick="fecharDetalhesCarta(); tentarAtivarCarta('${relId}', ${index});" style="background: #009966; padding: 10px; font-size: 13px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold;">Ativar Magia</button>`;
+    }
+
+    document.getElementById('detalhe-carta-acoes').innerHTML = acoesHtml;
+    document.getElementById('modal-carta').style.display = 'flex';
+}
+
+function fecharDetalhesCarta() {
+    document.getElementById('modal-carta').style.display = 'none';
 }
 
 function tentarAtivarCarta(relId, index) {

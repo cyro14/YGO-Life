@@ -176,7 +176,7 @@ function travarMenu(travado) {
     }
 }
 
-// --- SISTEMA DE COLEÇÕES (POKÉDEX) ---
+// --- SISTEMA DE COLEÇÕES ---
 function abrirColecoes() {
     let cont = document.getElementById('colecoes-conteudo');
     let html = '';
@@ -623,7 +623,7 @@ function startGame() {
         toggleFullScreen();
     }
 
-    abrirBoosterInicial();
+    iniciarExameAdmissao();
 }
 
 function abrirBoosterInicial() {
@@ -638,7 +638,7 @@ function abrirBoosterInicial() {
     // CORREÇÃO: Garante que a variável se chama 'item'
     draft.forEach(item => {
         player.reliquias.push(item.id);
-        registrarDesbloqueio(item.id); // Regista a carta na Pokédex global
+        registrarDesbloqueio(item.id); // Regista a carta na dex global
         nomesHTML.push(`🎴 <b>${item.nome}</b>: <span style="font-size:12px; color:#ccc;">${item.desc}</span>`);
     });
 
@@ -647,7 +647,7 @@ function abrirBoosterInicial() {
     renderizarMao();
     autoSave(); // Salva o jogo com o novo booster
 
-    renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Vestir Uniforme e Começar</button>`);
+    renderButtons(`<button onclick="iniciarExameAdmissao()" class="btn-danger">Correr para a Arena de Exames!</button>`);
 }
 
 // --- MOTOR DE TEMPO (CALENDÁRIO) ---
@@ -1157,6 +1157,46 @@ function checarMorte() {
         renderButtons(`<button onclick="iniciarIdleLoop()">Ufa, voltar à rotina!</button>`);
     } else {
         dispararGameOver("Seus Pontos de Vida chegaram a zero.");
+    }
+}
+
+function iniciarExameAdmissao() {
+    travarMenu(true);
+    let puzzle = puzzlesExame[0]; // Ano 0 = Admissão
+    let puzzleDeck = puzzle[player.deck];
+
+    // Oponente pode ser um Instrutor comum ou o próprio Crowler (10% de chance para o easter egg, ou fixo no Crowler)
+    let nomeOponente = Math.random() > 0.8 ? puzzle.bossName : "Instrutor da Academia";
+
+    showDialog(`<span style="color:var(--danger)">⚠️ EXAME DE ADMISSÃO! ⚠️</span><br><b>Oponente: ${nomeOponente}</b><br><br>${puzzleDeck.texto}`, imgs.bg_academy, puzzle.bossImg);
+
+    let botoesHTML = puzzleDeck.opcoes.map((opc, index) => {
+        return `<button onclick="resolverPuzzleAdmissao('${player.deck}', ${index})" class="btn-primary" style="margin-bottom: 5px; font-size: 13px; text-transform: none;">${opc.texto}</button>`;
+    }).join('');
+
+    renderButtons(botoesHTML);
+}
+
+function resolverPuzzleAdmissao(deckId, opcIndex) {
+    let puzzle = puzzlesExame[0][deckId];
+    let escolha = puzzle.opcoes[opcIndex];
+    let statAtual = escolha.stat === 'atk' ? player.atk : player.int;
+
+    if (escolha.correto && statAtual >= escolha.req) {
+        // PASSOU NA ADMISSÃO
+
+        registrarDesbloqueio(player.ace);
+        registrarDesbloqueio(player.spirit);
+        
+        showDialog(`<span style="color:var(--success)"><b>APROVADO!</b></span><br>${escolha.msg}<br><br>Você compensou a falta da prova teórica com um duelo brilhante. Devido à sua nota teórica zero, você foi designado para o dormitório de menor rank: <b>Slifer Vermelho</b>. Bem-vindo à Academia de Duelos!`, imgs.bg_academy);
+
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Ir para o Dormitório Slifer</button>`);
+
+    } else {
+        // GAME OVER PRECOCE
+        showDialog(`<span style="color:var(--danger)"><b>REPROVADO!</b></span><br>${escolha.msg}<br><br>Sua performance foi pífia. Os seguranças da KaibaCorp estão escoltando você para fora da ilha.`, imgs.threat);
+
+        renderButtons(`<button onclick="dispararGameOver('Reprovado no Exame Prático de Admissão.')" class="btn-danger">Fim de Jogo</button>`);
     }
 }
 

@@ -97,6 +97,8 @@ const bancoConversas = [
 
 const bancoTrivia = [
     { q: "Qual o Nível do Mago Negro?", opções: ["Nível 6", "Nível 7", "Nível 8"], correta: 1 },
+    { q: "Qual é o nome do dormitório reservado para os alunos com o desempenho mais baixo, associado à cor vermelha?", opções: ["Obelisco Vermelho", "Rá Vermelho", "Slifer Vermelho"], correta: 2 },
+    
     { q: "Quantos Pontos de Vida (PV) se começa em um duelo oficial de Batalha da Cidade?", opções: ["2000 PV", "4000 PV", "8000 PV"], correta: 1 },
     { q: "Qual o Nível do Elemental HERO Flame Wingman?", opções: ["Nível 6", "Nível 7", "Nível 8"], correta: 0 },
     { q: "Quantos Pontos de Vida (PV) se começa em um duelo oficial no TCG?", opções: ["2000 PV", "4000 PV", "8000 PV"], correta: 2 },
@@ -104,6 +106,35 @@ const bancoTrivia = [
 ];
 
 const puzzlesExame = {
+    0: { // EXAME DE ADMISSÃO
+        bossName: "Prof. Crowler (Avaliador Surpresa)",
+        bossImg: "assets/images/pxArt.png", 
+        hero: {
+            texto: "Você chegou atrasado e perdeu a prova teórica! O Prof. Crowler, irritado, decidiu te avaliar pessoalmente. Ele invocou o 'Golem das Engrenagens Antigas' (3000 ATK). Seu 'Homem-Pássaro Chama' tem apenas 2100 ATK. Como você sobrevive?",
+            opcoes: [
+                { texto: "Usar o terreno 'Arranha-Céu' para ganhar vantagem (Exige 5 INT)", stat: 'int', req: 5, correto: true, msg: "Você usou o cenário a seu favor! O ataque superou o Golem e Crowler ficou boquiaberto." },
+                { texto: "Ataque frontal com força bruta (Exige 20 ATK)", stat: 'atk', req: 20, correto: true, msg: "Isso exigiria uma força que você ainda não tem." },
+                { texto: "Correr e desistir do duelo", stat: 'int', req: 0, correto: false, msg: "Você fugiu da arena. Crowler riu e carimbou sua reprovação." }
+            ]
+        },
+        roid: {
+            texto: "Você perdeu a prova teórica! Para entrar, precisa impressionar o Prof. Crowler no duelo prático. Ele bloqueou sua linha de frente com monstros imensos. Você tem 'Gyroid' e 'Brocaroid'.",
+            opcoes: [
+                { texto: "Atacar diretamente com força bruta (Exige 10 ATK)", stat: 'atk', req: 10, correto: true, msg: "Seus Roids ainda não têm essa potência ofensiva." },
+                { texto: "Usar manobras evasivas e efeito de perfuração (Exige 3 INT)", stat: 'int', req: 3, correto: true, msg: "Jogada tática perfeita! Você contornou a defesa pesada dele e causou dano direto, garantindo sua vaga!" },
+                { texto: "Apertar botões aleatórios dos Roids", stat: 'int', req: 0, correto: false, msg: "Seu Gyroid pifou no meio da arena. Reprovado sumariamente." }
+            ]
+        },
+        beast: {
+            texto: "Após zerar a prova teórica por falta de presença, Crowler exige um duelo prático perfeito. Ele encheu o campo de cartas viradas para baixo (armadilhas) para conter suas feras.",
+            opcoes: [
+                { texto: "Investida brutal com 'Rei Tigre Wanghu' (Exige 8 ATK)", stat: 'atk', req: 8, correto: true, msg: "A agressividade do seu deck destruiu a estratégia dele antes que as armadilhas pudessem ser ativadas! Aprovado!" },
+                { texto: "Tentar desarmar as armadilhas com magia (Exige 10 INT)", stat: 'int', req: 10, correto: true, msg: "Você não tem o intelecto necessário para essa jogada sutil." },
+                { texto: "Recuar os monstros para defesa", stat: 'int', req: 0, correto: false, msg: "Bestas não recuam! Crowler aproveitou sua hesitação e obliterou seus monstros." }
+            ]
+        }
+    },
+    
     1: { 
         bossName: "Chazz Princeton",
         bossImg: "assets/images/pxArt.png", // Podes trocar depois por uma imagem do Chazz

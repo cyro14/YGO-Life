@@ -4,7 +4,7 @@
 let player = {
     name: "", deck: "", ace: "", spirit: "", dormitorio: "Slifer Vermelho",
     hp: 3, maxHp: 3, dp: 0, atk: 0, int: 0,
-    diaIndex: 0, semana: 1, mes: 1, ano: 1, 
+    diaIndex: 0, semana: 1, mes: 1, ano: 1,
     foco: 'duelo',
     reliquias: [], equipamentos: [], consumiveis: [],
     equipados: { disco: null, deckbox: null }, // Slots de equipamento
@@ -12,6 +12,205 @@ let player = {
     amizades: { syrus: 0, jaden: 0, bastion: 0, zane: 0 },
     socialSemana: {}
 };
+
+// --- SISTEMA DE SAVE E VARIÁVEIS GLOBAIS ---
+let currentSlot = 1;
+let globalData = { desbloqueados: [] }; // Guarda IDs de tudo que já foi visto/comprado
+
+const SAVE_PREFIX = "ygo_idle_slot_";
+const GLOBAL_KEY = "ygo_idle_global";
+const LAST_SLOT_KEY = "ygo_idle_last_slot";
+
+function salvarGlobal() {
+    localStorage.setItem(GLOBAL_KEY, JSON.stringify(globalData));
+}
+
+function registrarDesbloqueio(id) {
+    if (!globalData.desbloqueados.includes(id)) {
+        globalData.desbloqueados.push(id);
+        salvarGlobal();
+    }
+}
+
+function autoSave() {
+    localStorage.setItem(SAVE_PREFIX + currentSlot, JSON.stringify(player));
+    localStorage.setItem(LAST_SLOT_KEY, currentSlot);
+}
+
+// --- CONTROLE DOS MENUS INICIAIS ---
+window.onload = () => {
+    carregarDadosGlobais();
+    renderizarMenuInicial();
+
+    // Força o bloqueio de todas as outras telas no carregamento
+    document.getElementById('screen-creation').style.display = 'none';
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('stage').style.display = 'none';
+
+    document.getElementById('screen-main-menu').style.display = 'flex';
+};
+
+function carregarDadosGlobais() {
+    let gData = localStorage.getItem(GLOBAL_KEY);
+    if (gData) globalData = JSON.parse(gData);
+
+    let btnCont = document.getElementById('btn-continuar');
+    let last = localStorage.getItem(LAST_SLOT_KEY);
+
+    // Desabilita o botão se não houver jogo salvo
+    if (!last || !localStorage.getItem(SAVE_PREFIX + last)) {
+        btnCont.disabled = true;
+        btnCont.style.background = '#333';
+        btnCont.style.cursor = 'not-allowed';
+        btnCont.innerText = '▶ Continuar (Nenhum Save)';
+    } else {
+        btnCont.disabled = false;
+        btnCont.style.background = '#e74c3c'; // Cor do botão principal
+        btnCont.style.cursor = 'pointer';
+        btnCont.innerText = '▶ Continuar (Último Save)';
+    }
+}
+
+function continuarJogo() {
+    let lastSlot = localStorage.getItem(LAST_SLOT_KEY);
+    let data = localStorage.getItem(SAVE_PREFIX + lastSlot);
+
+    if (data) {
+        player = JSON.parse(data);
+        currentSlot = lastSlot;
+        document.getElementById('screen-main-menu').style.display = 'none';
+        iniciarJogoCarregado();
+    }
+}
+
+function iniciarJogoCarregado() {
+    document.getElementById('screen-creation').style.display = 'none';
+    document.getElementById('screen-main-menu').style.display = 'none';
+
+    document.getElementById('hud').style.display = 'flex';
+    document.getElementById('idle-progress-container').style.display = 'block';
+    document.getElementById('stage').style.display = 'flex';
+    document.getElementById('dialog-box').style.display = 'block';
+    document.getElementById('action-panel').style.display = 'flex';
+    document.getElementById('player-hand').style.display = 'flex';
+
+    updateHUD();
+    renderizarMao();
+    iniciarIdleLoop();
+}
+
+function abrirSlotsNovoJogo() {
+    let container = document.getElementById('slots-container');
+    container.innerHTML = '';
+
+    for (let i = 1; i <= 3; i++) {
+        let saveInfo = localStorage.getItem(SAVE_PREFIX + i);
+
+        if (saveInfo) {
+            let pData = JSON.parse(saveInfo);
+            // Slot Ocupado (Mostra opções de Carregar ou Substituir)
+            container.innerHTML += `
+                <div style="background: #27ae60; padding: 10px; border: 1px solid #444; color: #fff; margin-bottom: 8px; border-radius: 5px;">
+                    <div style="margin-bottom: 10px; font-weight: bold;">Slot ${i}: ${pData.name} (Ano ${pData.ano})</div>
+                    <div style="display: flex; gap: 5px; justify-content: center;">
+                        <button onclick="carregarSlotEspecifico(${i})" style="background: #2980b9; padding: 8px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer;">Carregar Jogo</button>
+                        <button onclick="confirmarNovoJogo(${i})" style="background: #c0392b; padding: 8px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer;">Apagar e Novo</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Slot Vazio
+            container.innerHTML += `<button onclick="iniciarCriacaoNovoJogo(${i})" style="background: #222; padding: 15px; border: 1px solid #444; color: #fff; cursor: pointer; border-radius: 5px; margin-bottom: 8px; width: 100%;">Slot ${i} - Vazio</button>`;
+        }
+    }
+
+    document.getElementById('modal-slots').style.display = 'flex';
+}
+
+function carregarSlotEspecifico(slot) {
+    let data = localStorage.getItem(SAVE_PREFIX + slot);
+    if (data) {
+        player = JSON.parse(data);
+        currentSlot = slot;
+        localStorage.setItem(LAST_SLOT_KEY, slot); // Define como o último jogado
+        fecharSlots();
+        document.getElementById('screen-main-menu').style.display = 'none';
+        iniciarJogoCarregado();
+    }
+}
+
+function confirmarNovoJogo(slot) {
+    if (confirm("Tem certeza que deseja APAGAR este jogo salvo? O progresso será perdido para sempre!")) {
+        iniciarCriacaoNovoJogo(slot);
+    }
+}
+
+function fecharSlots() {
+    document.getElementById('modal-slots').style.display = 'none';
+}
+
+function iniciarCriacaoNovoJogo(slot) {
+    currentSlot = slot;
+    document.getElementById('modal-slots').style.display = 'none';
+    document.getElementById('screen-main-menu').style.display = 'none'; // Esconde o menu principal
+    ui.creation.style.display = 'flex'; // Mostra a tela de criação
+
+    // Reseta o player para o padrão antes de começar
+    player = {
+        name: "", deck: "", ace: "", spirit: "", dormitorio: "Slifer Vermelho",
+        hp: 3, maxHp: 3, dp: 0, atk: 0, int: 0,
+        diaIndex: 0, semana: 1, mes: 1, ano: 1,
+        foco: 'duelo', reliquias: [], equipamentos: [], consumiveis: [],
+        equipados: { disco: null, deckbox: null },
+        parceirosDesbloqueados: [], amizades: { syrus: 0, jaden: 0, bastion: 0, zane: 0 },
+        socialSemana: {}
+    };
+}
+
+function travarMenu(travado) {
+    let btnHome = document.getElementById('btn-home');
+    if (btnHome) {
+        btnHome.disabled = travado;
+        btnHome.style.opacity = travado ? '0.3' : '1';
+        btnHome.style.cursor = travado ? 'not-allowed' : 'pointer';
+    }
+}
+
+// --- SISTEMA DE COLEÇÕES (POKÉDEX) ---
+function abrirColecoes() {
+    let cont = document.getElementById('colecoes-conteudo');
+    let html = '';
+
+    // Junta tudo que pode ser colecionado num array só para renderizar
+    let todosItens = [...lojaItens, ...asesIniciais, ...espiritosIniciais];
+    let total = todosItens.length;
+    let descobertos = 0;
+
+    todosItens.forEach(item => {
+        let isDesbloqueado = globalData.desbloqueados.includes(item.id);
+        let classeExtra = isDesbloqueado ? '' : 'pokedex-oculta';
+        let nomeExibicao = isDesbloqueado ? item.nome : '???';
+        let descExibicao = isDesbloqueado ? item.desc : 'Item desconhecido.';
+        // Se for carta da loja não tem .img, usa uma genérica ou tenta puxar do banco
+        let imgRender = item.img || "assets/images/pxArt.png";
+
+        if (isDesbloqueado) descobertos++;
+
+        html += `
+        <div class="card-item ${classeExtra}" style="pointer-events: none; padding: 10px;">
+            <img src="${imgRender}" class="card-img" style="height: 60px;">
+            <div class="card-name" style="font-size: 11px;">${nomeExibicao}</div>
+        </div>`;
+    });
+
+    document.getElementById('pokedex-progresso').innerText = `${descobertos} / ${total}`;
+    cont.innerHTML = html;
+    document.getElementById('modal-colecoes').style.display = 'flex';
+}
+
+function fecharColecoes() {
+    document.getElementById('modal-colecoes').style.display = 'none';
+}
 
 let abaAtual = 'consumiveis'; // Controla a aba aberta do inventário
 
@@ -45,7 +244,7 @@ function renderizarMenuInicial() {
 // --- CONTROLE DE TELA CHEIA ---
 function toggleFullScreen() {
     let elem = document.documentElement; // Pega a página inteira
-    
+
     if (!document.fullscreenElement) {
         // Tenta entrar em tela cheia
         if (elem.requestFullscreen) {
@@ -70,7 +269,7 @@ function toggleFullScreen() {
 // Manipula o clique nos cards
 function selecionarOpcao(tipo, id) {
     selecaoAtual[tipo] = id;
-    
+
     // Remove o brilho dourado dos outros cartões da mesma categoria
     let itens = document.querySelectorAll(`[id^="${tipo}-"]`);
     itens.forEach(el => el.classList.remove('active'));
@@ -79,7 +278,7 @@ function selecionarOpcao(tipo, id) {
     // Se clicou no Deck, desenha os Ases vinculados a ele na div do meio
     if (tipo === 'deck') {
         let asesDoDeck = asesIniciais.filter(a => a.deckReq === id);
-        
+
         document.getElementById('ace-grid').innerHTML = asesDoDeck.map(a => `
             <div class="card-item" id="ace-${a.id}" onclick="selecionarOpcao('ace', '${a.id}')">
                 <img src="${a.img}" class="card-img" alt="${a.nome}" onerror="this.style.display='none';">
@@ -87,7 +286,7 @@ function selecionarOpcao(tipo, id) {
                 <div class="card-desc">${a.desc}</div>
             </div>
         `).join('');
-        
+
         selecaoAtual.ace = null; // Reseta o ás caso troque de deck
         document.getElementById('btn-start').disabled = true;
     }
@@ -111,12 +310,12 @@ function renderizarMao() {
 
     handDiv.innerHTML = player.reliquias.map((relId, index) => {
         let item = lojaItens.find(i => i.id === relId);
-        
+
         // CORREÇÃO: Se a carta não for encontrada no data.js, ele não trava o jogo
         if (!item) return `<div style="color: red; font-size: 12px;">Erro: Carta ${relId} não existe</div>`;
-        
-        let bg = item.subTipo === 'armadilha' ? '#bc1c6c' : '#009966'; 
-        
+
+        let bg = item.subTipo === 'armadilha' ? '#bc1c6c' : '#009966';
+
         return `
             <div onclick="tentarAtivarCarta('${relId}', ${index})" style="background: ${bg}; border: 2px solid #fff; border-radius: 4px; padding: 10px; min-width: 100px; text-align: center; cursor: pointer; font-size: 12px; font-weight: bold; flex-shrink: 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); color: #fff;">
                 ${item.nome}
@@ -127,13 +326,13 @@ function renderizarMao() {
 
 function tentarAtivarCarta(relId, index) {
     let item = lojaItens.find(i => i.id === relId);
-    
+
     if (item.subTipo === 'armadilha') {
         // Armadilhas não podem ser ativadas no modo livre, precisam de um "Gatilho"
         alert("Armadilhas só podem ser ativadas em resposta a um evento (ex: durante emboscadas)!");
         return;
     }
-    
+
     // Processa Magias Normais
     if (item.id === 'pote_ganancia') {
         player.dp += 200;
@@ -146,20 +345,17 @@ function tentarAtivarCarta(relId, index) {
         player.hp = player.maxHp;
         showDialog(`Você ativou <b>Monstro Reborn</b>! Uma aura de luz restaurou completamente seus Pontos de Vida.`, imgs.hub);
     }
-    
+
     // Consome a magia da mão após o uso
     player.reliquias.splice(index, 1);
     updateHUD();
     renderizarMao();
 }
 
-// Chame a renderização assim que o script carregar
-window.onload = renderizarMenuInicial;
-
 function abrirInventario() {
     let inv = document.getElementById('modal-inventario');
     let cont = document.getElementById('inv-conteudo');
-    
+
     let html = `<b>🥪 Consumíveis:</b><br>`;
     if (player.consumiveis.length === 0) html += `<i>Vazio</i><br>`;
     player.consumiveis.forEach((item, index) => {
@@ -212,18 +408,18 @@ function renderizarSocial() {
         let p = parceiros.find(x => x.id === id);
         let coracoes = player.amizades[id];
         let displayCoracoes = '❤️'.repeat(coracoes) + '🤍'.repeat(5 - coracoes);
-        
-        let statusBonus = coracoes >= 3 
-            ? `<span style="color:#27ae60; font-weight:bold;">Bônus Ativo</span>` 
+
+        let statusBonus = coracoes >= 3
+            ? `<span style="color:#27ae60; font-weight:bold;">Bônus Ativo</span>`
             : `<span style="color:#e74c3c;">Desbloqueia aos 3 ❤️</span>`;
 
         // Verifica se já interagiu nesta semana
         let interagiu = player.socialSemana[id] || { chat: false, gift: false };
-        
-        let btnChat = interagiu.chat 
+
+        let btnChat = interagiu.chat
             ? `<button disabled style="flex:1; padding:5px; font-size:11px; background:#555;">Já Conversou</button>`
             : `<button onclick="iniciarConversa('${id}')" style="flex:1; padding:5px; font-size:11px; background:#2980b9;">Conversar</button>`;
-            
+
         let btnGift = (interagiu.gift || coracoes >= 5)
             ? `<button disabled style="flex:1; padding:5px; font-size:11px; background:#555;">${coracoes >= 5 ? 'Amizade Máxima' : 'Já Presenteou'}</button>`
             : `<button onclick="presentearParceiro('${id}')" style="flex:1; padding:5px; font-size:11px; background:#27ae60;">Lanche (100 DP)</button>`;
@@ -245,35 +441,36 @@ function renderizarSocial() {
 }
 
 function iniciarConversa(id) {
+    travarMenu(true); // Bloqueia o botão Home durante a conversa
     fecharSocial(); // Fecha o PDA para mostrar a conversa no palco principal
     let p = parceiros.find(x => x.id === id);
-    
+
     // Sorteia uma pergunta
     let conv = bancoConversas[Math.floor(Math.random() * bancoConversas.length)];
-    
+
     // Mistura as opções
     let opcoes = [
         { txt: conv.certa, correto: true },
         { txt: conv.erradas[0], correto: false },
         { txt: conv.erradas[1], correto: false }
     ];
-    opcoes.sort(() => Math.random() - 0.5); 
-    
+    opcoes.sort(() => Math.random() - 0.5);
+
     showDialog(`<b>${p.nome}</b> te faz uma pergunta:<br><br>"${conv.fala}"`, imgs.bg_academy, p.img);
-    
+
     let botoesHTML = opcoes.map(opc => {
         return `<button onclick="responderConversa('${id}', ${opc.correto})" class="btn-primary" style="margin-bottom:5px; font-size:12px; text-transform:none;">${opc.txt}</button>`;
     }).join('');
-    
+
     renderButtons(botoesHTML);
 }
 
 function responderConversa(id, acertou) {
     let p = parceiros.find(x => x.id === id);
-    
+
     if (!player.socialSemana[id]) player.socialSemana[id] = { chat: false, gift: false };
     player.socialSemana[id].chat = true; // Bloqueia chat até semana que vem
-    
+
     if (acertou) {
         if (player.amizades[id] < 5) player.amizades[id]++;
         aplicarPenalidadeZane(id);
@@ -282,20 +479,20 @@ function responderConversa(id, acertou) {
     } else {
         showDialog(`<b>${p.nome}:</b> "Sério? Eu não concordo muito com isso..."<br><br><span style="color:var(--danger);">O clima ficou constrangedor. A amizade não mudou.</span>`, imgs.bg_academy, p.img);
     }
-    
+
     renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar</button>`);
 }
 
 function presentearParceiro(id) {
     if (player.dp < 100) return;
-    
+
     player.dp -= 100;
-    
+
     if (!player.socialSemana[id]) player.socialSemana[id] = { chat: false, gift: false };
     player.socialSemana[id].gift = true; // Bloqueia presente até semana que vem
-    
+
     if (player.amizades[id] < 5) player.amizades[id]++;
-    
+
     aplicarPenalidadeZane(id);
     updateHUD();
     renderizarSocial();
@@ -321,15 +518,16 @@ function dispararEventoSocial() {
 
     // Filtra quem pode ser encontrado no ano atual e que ainda não conheces
     let possiveis = parceiros.filter(p => p.anoReq <= player.ano && !player.parceirosDesbloqueados.includes(p.id));
-    
+
     if (possiveis.length === 0) return false;
 
+    travarMenu(true);
     clearInterval(idleTimer);
     let novoAmigo = possiveis[Math.floor(Math.random() * possiveis.length)];
     player.parceirosDesbloqueados.push(novoAmigo.id);
 
     showDialog(`<span style="color:#2980b9">🤝 NOVO ENCONTRO!</span><br>Cruzaste com <b>${novoAmigo.nome}</b> no pátio da Academia! Agora tens o contacto dele no teu PDA. Aumenta a amizade para desbloquear o bónus passivo.`, imgs.bg_academy, novoAmigo.img);
-    
+
     renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Cumprimentar e seguir caminho</button>`);
     return true;
 }
@@ -338,16 +536,16 @@ let idleTimer = null;
 let duracaoDiaMs = 2000; // 2 segundos = 1 dia no jogo (ajustável)
 
 const ui = {
-    creation: document.getElementById('screen-creation'), 
+    creation: document.getElementById('screen-creation'),
     hud: document.getElementById('hud'),
-    stage: document.getElementById('stage'), 
+    stage: document.getElementById('stage'),
     dialog: document.getElementById('dialog-box'),
-    actions: document.getElementById('action-panel'), 
+    actions: document.getElementById('action-panel'),
     ending: document.getElementById('screen-ending'),
-    img: document.getElementById('stage-image'), 
+    img: document.getElementById('stage-image'),
     overlay: document.getElementById('stage-overlay'),
-    focoOverlay: document.getElementById('foco-overlay'), 
-    progContainer: document.getElementById('idle-progress-container'), 
+    focoOverlay: document.getElementById('foco-overlay'),
+    progContainer: document.getElementById('idle-progress-container'),
     progBar: document.getElementById('idle-progress-bar'),
     hand: document.getElementById('player-hand')
 };
@@ -358,7 +556,7 @@ function updateHUD() {
     document.getElementById('v-dp').innerText = player.dp;
     document.getElementById('v-atk').innerText = player.atk;
     document.getElementById('v-int').innerText = player.int;
-    
+
     ui.overlay.innerHTML = `Mês ${player.mes} - Sem ${player.semana} - <span style="color:#fff">${diasDaSemana[player.diaIndex]}</span>`;
     ui.focoOverlay.innerText = `Foco: ${player.foco === 'duelo' ? "⚔️ Duelos" : "📚 Estudos"}`;
 }
@@ -406,47 +604,59 @@ function startGame() {
     player.hp = deckBase.hp;
     player.maxHp = deckBase.hp;
 
-    ui.creation.style.display = 'none';
-    ui.hud.style.display = 'flex';
-    ui.progContainer.style.display = 'block';
-    ui.stage.style.display = 'flex';
-    ui.dialog.style.display = 'block';
-    ui.actions.style.display = 'flex';
-    ui.hand.style.display = 'flex';
+    // BLINDAGEM: Força as telas antigas a sumirem
+    document.getElementById('screen-creation').style.display = 'none';
+    document.getElementById('screen-main-menu').style.display = 'none';
+
+    // Mostra as telas do jogo
+    document.getElementById('hud').style.display = 'flex';
+    document.getElementById('idle-progress-container').style.display = 'block';
+    document.getElementById('stage').style.display = 'flex';
+    document.getElementById('dialog-box').style.display = 'block';
+    document.getElementById('action-panel').style.display = 'flex';
+    document.getElementById('player-hand').style.display = 'flex';
+
+    updateHUD();
 
     let checkFs = document.getElementById('check-fullscreen');
     if (checkFs && checkFs.checked) {
         toggleFullScreen();
     }
-    
-    updateHUD();
+
     abrirBoosterInicial();
 }
 
 function abrirBoosterInicial() {
+    // Filtra apenas itens do tipo 'reliquia'
     let poolReliquias = lojaItens.filter(i => i.tipo === 'reliquia');
+
+    // Sorteia 3 relíquias aleatórias (Draft)
     let draft = poolReliquias.sort(() => 0.5 - Math.random()).slice(0, 3);
-    
+
     let nomesHTML = [];
+
+    // CORREÇÃO: Garante que a variável se chama 'item'
     draft.forEach(item => {
         player.reliquias.push(item.id);
+        registrarDesbloqueio(item.id); // Regista a carta na Pokédex global
         nomesHTML.push(`🎴 <b>${item.nome}</b>: <span style="font-size:12px; color:#ccc;">${item.desc}</span>`);
     });
 
-    showDialog(`<span style="color:var(--gold)">🎁 PACOTE DE MATRÍCULA!</span><br>O Reitor Sheppard te entregou 3 cartas raras para iniciar sua jornada. Construa sua estratégia em volta delas:<br><br>${nomesHTML.join('<br><br>')}`, imgs.hub);
-    
-    // CORREÇÃO: Atualiza o visual da mão assim que recebe as cartas
-    renderizarMao(); 
-    
+    showDialog(`<span style="color:var(--gold)">🎁 PACOTE DE MATRÍCULA!</span><br>O Reitor Sheppard entregou-te 3 cartas raras para iniciar a tua jornada. Constrói a tua estratégia em volta delas:<br><br>${nomesHTML.join('<br><br>')}`, imgs.bg_academy);
+
+    renderizarMao();
+    autoSave(); // Salva o jogo com o novo booster
+
     renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Vestir Uniforme e Começar</button>`);
 }
 
 // --- MOTOR DE TEMPO (CALENDÁRIO) ---
 function iniciarIdleLoop() {
+    travarMenu(false);
     if (player.hp <= 0) return dispararGameOver("Ficou sem Pontos de Vida.");
 
     showDialog(`<b>${diasDaSemana[player.diaIndex]}!</b><br>O semestre está correndo. Administre seu tempo!`, getDormBackground());
-    
+
     renderButtons(`
         <button onclick="mudarFoco()" class="btn-primary">Mudar Foco (Atual: ${player.foco === 'duelo' ? 'Duelos' : 'Estudos'})</button>
         <button onclick="acaoLoja()">🛒 Visitar Dona Dorothy</button>
@@ -455,13 +665,13 @@ function iniciarIdleLoop() {
     clearInterval(idleTimer);
     ui.progBar.style.width = '0%';
     ui.progBar.style.transition = `width ${duracaoDiaMs}ms linear`;
-    
+
     // Inicia a animação da barra
     setTimeout(() => ui.progBar.style.width = '100%', 50);
 
     idleTimer = setInterval(() => {
         processarFimDoDia();
-    }, duracaoDiaMs); 
+    }, duracaoDiaMs);
 }
 
 function processarFimDoDia() {
@@ -469,25 +679,25 @@ function processarFimDoDia() {
     if (player.foco === 'duelo') {
         let ganhoAtk = Math.floor(Math.random() * 3) + 1;
         let ganhoDp = Math.floor(Math.random() * 15) + 10;
-        
+
         // Bónus Jaden (Dobra DP) e Zane (Dobra ATK)
-        if (temBonus('jaden')) ganhoDp *= 2; 
+        if (temBonus('jaden')) ganhoDp *= 2;
         if (temBonus('zane')) ganhoAtk *= 2;
-        
+
         // Modificador do Pote da Ganância (Atenção ao ID correto da carta)
         if (player.reliquias.includes('pote_ganancia')) {
             ganhoDp = Math.floor(ganhoDp * 1.5);
         }
-        
+
         player.atk += ganhoAtk;
         player.dp += ganhoDp;
     } else {
         // CORREÇÃO: Faltava declarar e calcular o ganhoInt antes de multiplicar
         let ganhoInt = Math.floor(Math.random() * 4) + 2;
-        
+
         if (temBonus('bastion')) ganhoInt = Math.floor(ganhoInt * 1.5);
-        
-        player.int += ganhoInt; 
+
+        player.int += ganhoInt;
     }
 
     // 2. Avança o calendário
@@ -504,25 +714,25 @@ function processarFimDoDia() {
             }
         }
     }
-    
+
     updateHUD();
 
     // 3. Verifica Eventos Fixos do Calendário
     let diaAtual = diasDaSemana[player.diaIndex];
-    
+
     if (diaAtual === "Sexta-feira") {
         clearInterval(idleTimer);
         setTimeout(eventoAulaSexta, 100);
     } else if (diaAtual !== "Sábado" && diaAtual !== "Domingo") {
-        
+
         // 4. Se for um dia normal de aula, rola os dados para ver se sofre um evento aleatório
         if (dispararEventoAleatorio()) {
             return; // Interrompe se sofreu emboscada
-        } 
+        }
         else if (dispararEventoSocial()) {
             return; // Interrompe se encontrou um parceiro
         }
-        
+
         // Reseta a barra visual para o próximo dia se nada aconteceu
         ui.progBar.style.transition = 'none';
         ui.progBar.style.width = '0%';
@@ -531,6 +741,8 @@ function processarFimDoDia() {
             ui.progBar.style.width = '100%';
         }, 50);
     }
+
+    autoSave();
 }
 
 function mudarFoco() {
@@ -542,15 +754,16 @@ function mudarFoco() {
 // --- EVENTOS ESPECIAIS ---
 function dispararEventoAleatorio() {
     let chance = Math.random();
-    
+
     // Bloqueio das Espadas da Luz Reveladora
-    if (player.reliquias.includes('espadas_luz') && player.mes === 1) return false; 
-    
-    if (chance < 0.7) return false; 
+    if (player.reliquias.includes('espadas_luz') && player.mes === 1) return false;
+
+    if (chance < 0.7) return false;
+    travarMenu(true);
 
     clearInterval(idleTimer);
-    
-    let reqAtk = 5 + (player.mes * 4) + (player.semana * 2) + Math.floor(Math.random() * 5); 
+
+    let reqAtk = 5 + (player.mes * 4) + (player.semana * 2) + Math.floor(Math.random() * 5);
     let custoFuga = 15 + (player.mes * 20);
 
     showDialog(`<span style="color:var(--danger)">⚠️ EMBOSCADA!</span><br>Um veterano furioso bloqueia seu caminho! "Pague o pedágio de ${custoFuga} DP ou duele!"<br><br><i>A postura dele é intimidadora. Você não tem certeza se o seu ATK (${player.atk}) é suficiente para vencê-lo...</i>`, imgs.bg_abandoned);
@@ -565,10 +778,10 @@ function dispararEventoAleatorio() {
     if (player.reliquias.includes('forca_espelho')) {
         botoes += `<button onclick="ativarArmadilhaBatalha('forca_espelho')" style="background:#bc1c6c; color: white; border-color: #fff;">Ativar Armadilha: Força Espelho</button>`;
     }
-    
+
     renderButtons(botoes);
-    
-    return true; 
+
+    return true;
 }
 
 function ativarArmadilhaBatalha(id) {
@@ -581,7 +794,7 @@ function ativarArmadilhaBatalha(id) {
         let recompensa = 25 * player.mes;
         player.dp += recompensa;
         updateHUD();
-        
+
         showDialog(`<b>VOCÊ ATIVOU UMA CARTA ARMADILHA!</b><br>A <b>Força Espelho</b> estilhaçou o ataque do veterano e varreu o campo dele! Você venceu instantaneamente e pegou ${recompensa} DP!`, imgs.duel);
         renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar Rotina</button>`);
     }
@@ -592,7 +805,7 @@ function resolverEventoAtaque(requisito) {
         let recompensa = 25 * player.mes;
         // Bônus passivo do Des Koala (Monstro Ás)
         if (player.ace === 'koala') recompensa += 5;
-        
+
         player.dp += recompensa;
         updateHUD();
         showDialog(`<span style="color:var(--success)"><b>VITÓRIA ESMAGADORA!</b></span><br>Você superou as expectativas e venceu! Recolheu <b>${recompensa} DP</b> do veterano.`, imgs.duel);
@@ -609,7 +822,7 @@ function resolverEventoAtaque(requisito) {
     }
 
     if (player.hp <= 0) {
-        checarMorte(); 
+        checarMorte();
     } else {
         renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar Rotina</button>`);
     }
@@ -641,17 +854,18 @@ function resolverEventoAtaque(requisito) {
     }
 
     if (player.hp <= 0) {
-        checarMorte(); 
+        checarMorte();
     } else {
         renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar Rotina</button>`);
     }
 }
 
 function eventoAulaSexta() {
+    travarMenu(true);
     let t = bancoTrivia[Math.floor(Math.random() * bancoTrivia.length)];
-    
+
     showDialog(`<span style="color:var(--gold)">🎓 AULA DE SEXTA!</span><br>Prof. Crowler exige sua atenção:<br><br><b>${t.q}</b>`, imgs.bg_academy);
-    
+
     let botoes = t.opções.map((opc, index) => {
         return `<button onclick="responderTrivia(${index}, ${t.correta})">${opc}</button>`;
     }).join("");
@@ -661,16 +875,16 @@ function eventoAulaSexta() {
 
 function responderTrivia(escolha, correta) {
     if (escolha === correta) {
-        player.int += 15; 
+        player.int += 15;
         showDialog(`<span style="color:var(--success)"><b>CORRETO!</b></span> +15 INT. Você pode aproveitar o fim de semana agora.`, imgs.hub);
     } else {
         player.hp--;
         showDialog(`<span style="color:var(--danger)"><b>ERRADO!</b></span> Detenção mental. Perdeu 1 HP.`, imgs.threat);
     }
-    
+
     updateHUD();
-    
-    if(player.hp <= 0) {
+
+    if (player.hp <= 0) {
         renderButtons(`<button onclick="dispararGameOver('Exaustão mental crônica.')">Finalizar</button>`);
     } else {
         // Avança para Sábado
@@ -682,7 +896,8 @@ function responderTrivia(escolha, correta) {
 
 // --- SISTEMA DE LOJA ---
 function acaoLoja() {
-    clearInterval(idleTimer); 
+    travarMenu(true);
+    clearInterval(idleTimer);
     showDialog("Dona Dorothy: 'Bem-vindo! As prateleiras estão organizadas. O que procura?'", imgs.shop);
     renderButtons(`
         <button onclick="mostrarLojaCategoria('consumivel')" style="background:#27ae60">Comprar Lanches</button>
@@ -695,18 +910,18 @@ function acaoLoja() {
 function mostrarLojaCategoria(categoria) {
     let itensCategoria = lojaItens.filter(i => i.tipo === categoria);
     let multiplicador = temBonus('syrus') ? 0.5 : 1;
-    
+
     let botoes = itensCategoria.map(i => {
         let jaPossui = player.reliquias.includes(i.id) || player.equipamentos.includes(i.id);
         let custoReal = Math.floor(i.custo * multiplicador);
         let status = jaPossui ? "disabled" : "";
         let texto = jaPossui ? "Esgotado" : `${custoReal} DP`;
-        
+
         return `<button onclick="comprarLoja('${i.id}')" ${status} style="font-size: 12px; text-transform: none; text-align: left;">
                     <b>${i.nome}</b> (${texto})<br><span style="font-size: 10px; color:#ccc;">${i.desc}</span>
                 </button>`;
     }).join('');
-    
+
     botoes += `<button onclick="acaoLoja()" style="background:#555">Voltar às Categorias</button>`;
     renderButtons(botoes);
 }
@@ -715,13 +930,15 @@ function comprarLoja(id) {
     let item = lojaItens.find(x => x.id === id); // Variável 'item' definida corretamente
     let multiplicador = temBonus('syrus') ? 0.5 : 1;
     let custoReal = Math.floor(item.custo * multiplicador); // Cálculo corrigido
-    
+
     if (player.dp < custoReal) {
         showDialog(`Dona Dorothy: 'Você não tem ${custoReal} DP suficiente para isso!'`, imgs.shop);
         return;
     }
 
     player.dp -= custoReal;
+    registrarDesbloqueio(item.id);
+    autoSave();
 
     if (item.tipo === 'consumivel') {
         player.consumiveis.push(item.id);
@@ -729,14 +946,14 @@ function comprarLoja(id) {
     } else if (item.tipo === 'reliquia') {
         player.reliquias.push(item.id);
         showDialog(`Compraste a carta <b>${item.nome}</b>!`, imgs.shop);
-        renderizarMao(); 
+        renderizarMao();
     } else if (item.tipo === 'equipamento') {
         player.equipamentos.push(item.id);
         showDialog(`Compraste <b>${item.nome}</b>! Vá à mochila para equipar.`, imgs.shop);
     }
 
     updateHUD();
-    mostrarLojaCategoria(item.tipo); 
+    mostrarLojaCategoria(item.tipo);
 }
 // --- SISTEMA DE INVENTÁRIO (ESTILO GBA) ---
 function abrirInventario() {
@@ -751,7 +968,7 @@ function fecharInventario() {
 function renderizarAbaInv(aba) {
     abaAtual = aba;
     let cont = document.getElementById('inv-conteudo');
-    
+
     // Atualiza cores das abas
     ['consumiveis', 'reliquias', 'equipamentos'].forEach(a => {
         document.getElementById(`aba-${a}`).style.background = (a === aba) ? '#27ae60' : '#444';
@@ -769,7 +986,7 @@ function renderizarAbaInv(aba) {
                         <button onclick="usarConsumivel(${index})" style="padding: 5px; font-size: 11px;">Consumir</button>
                      </div>`;
         });
-    
+
     } else if (aba === 'reliquias') {
         html += `<p style="color:var(--gold); font-weight:bold;">🎴 Estojo de Cartas (Na Mão)</p>`;
         if (player.reliquias.length === 0) html += `<i>Nenhuma magia ou armadilha na mão.</i>`;
@@ -779,12 +996,12 @@ function renderizarAbaInv(aba) {
                         <b>${item.nome}</b><br><span style="font-size:11px; color:#aaa;">${item.desc}</span>
                      </div>`;
         });
-    
+
     } else if (aba === 'equipamentos') {
         // Layout de Personagem à esquerda, Lista à direita
         let imgDisco = player.equipados.disco ? lojaItens.find(i => i.id === player.equipados.disco).nome : "Nenhum";
         let imgDeckbox = player.equipados.deckbox ? lojaItens.find(i => i.id === player.equipados.deckbox).nome : "Nenhuma";
-        
+
         html += `
         <div style="display:flex; gap:10px;">
             <div style="flex:1; background:#111; border:1px solid var(--gold); border-radius:5px; padding:10px; text-align:center;">
@@ -796,21 +1013,21 @@ function renderizarAbaInv(aba) {
             <div style="flex:2;">
                 <p style="margin-top:0; color:var(--gold); font-weight:bold;">Seus Equipamentos</p>
         `;
-        
+
         if (player.equipamentos.length === 0) html += `<i>Você não comprou equipamentos.</i>`;
         player.equipamentos.forEach(itemId => {
             let item = lojaItens.find(i => i.id === itemId);
             let estaEquipado = (player.equipados.disco === itemId || player.equipados.deckbox === itemId);
-            let btnAcao = estaEquipado 
-                ? `<button disabled style="padding:5px; font-size:10px; background:#555;">Equipado</button>` 
+            let btnAcao = estaEquipado
+                ? `<button disabled style="padding:5px; font-size:10px; background:#555;">Equipado</button>`
                 : `<button onclick="equiparItem('${itemId}')" style="padding:5px; font-size:10px; background:#2980b9;">Equipar</button>`;
-                
+
             html += `<div style="background:#222; padding:8px; margin-bottom:5px; border-radius:5px; border:1px solid #555; display:flex; justify-content:space-between; align-items:center;">
                         <div><b>${item.nome}</b><br><span style="font-size:10px; color:#aaa;">${item.desc}</span></div>
                         ${btnAcao}
                      </div>`;
         });
-        
+
         html += `</div></div>`;
     }
 
@@ -824,16 +1041,16 @@ function usarConsumivel(index) {
         alert("Seu HP já está no máximo!");
         return;
     }
-    
+
     if (itemId === 'sanduiche_ovo') player.hp++;
     else if (itemId === 'sanduiche_estragado') player.hp += Math.random() < 0.5 ? 1 : -1;
     else if (itemId === 'sanduiche_dourado') player.hp = player.maxHp; // + Amizade seria adicionada aqui
-    
+
     player.consumiveis.splice(index, 1);
     updateHUD();
     renderizarAbaInv('consumiveis');
-    
-    if(player.hp <= 0) {
+
+    if (player.hp <= 0) {
         fecharInventario();
         checarMorte();
     }
@@ -842,19 +1059,19 @@ function usarConsumivel(index) {
 // Lógica de Equipar
 function equiparItem(itemId) {
     let item = lojaItens.find(i => i.id === itemId);
-    
+
     if (itemId.includes('disco')) {
         player.equipados.disco = itemId;
     } else if (itemId.includes('deckbox')) {
         // Se já tinha deckbox antes, removemos o HP máximo antigo (para não acumular infinitamente)
-        if (player.equipados.deckbox === 'deckbox_couro') player.maxHp -= 1; 
-        
+        if (player.equipados.deckbox === 'deckbox_couro') player.maxHp -= 1;
+
         player.equipados.deckbox = itemId;
-        
+
         // Aplica os buffs do novo equipamento
         if (itemId === 'deckbox_couro') player.maxHp += 1;
     }
-    
+
     updateHUD();
     renderizarAbaInv('equipamentos');
 }
@@ -862,15 +1079,16 @@ function equiparItem(itemId) {
 // --- FIM DE JOGO ---
 // --- EXAMES FINAIS E PUZZLES ---
 function iniciarExameFinal() {
+    travarMenu(true);
     clearInterval(idleTimer);
-    
+
     // Fallback de segurança caso o ano ainda não tenha puzzle (ex: Ano 2)
-    let anoExame = puzzlesExame[player.ano] ? player.ano : 1; 
+    let anoExame = puzzlesExame[player.ano] ? player.ano : 1;
     let puzzle = puzzlesExame[anoExame];
     let puzzleDeck = puzzle[player.deck];
 
     showDialog(`<span style="color:var(--danger)">🔥 EXAME PRÁTICO DO ${player.ano}º ANO! 🔥</span><br><b>Oponente: ${puzzle.bossName}</b><br><br>${puzzleDeck.texto}`, imgs.bg_academy, puzzle.bossImg);
-    
+
     let botoesHTML = puzzleDeck.opcoes.map((opc, index) => {
         return `<button onclick="resolverPuzzleExame(${anoExame}, '${player.deck}', ${index})" class="btn-primary" style="margin-bottom: 5px; font-size: 13px; text-transform: none;">${opc.texto}</button>`;
     }).join('');
@@ -889,7 +1107,7 @@ function resolverPuzzleExame(anoExame, deckId, opcIndex) {
         player.mes = 1;
         player.semana = 1;
         player.diaIndex = 0;
-        
+
         // Progressão de Dormitório
         if (player.ano === 2) player.dormitorio = "Rá Amarelo";
         if (player.ano === 3) player.dormitorio = "Obelisco Azul";
@@ -897,13 +1115,13 @@ function resolverPuzzleExame(anoExame, deckId, opcIndex) {
         updateHUD();
         showDialog(`<span style="color:var(--success)"><b>VITÓRIA NO EXAME!</b></span><br>${escolha.msg}<br><br>Passaste de ano com distinção. Bem-vindo ao teu novo dormitório: <b>${player.dormitorio}</b>!`, imgs.bg_academy);
         renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Iniciar ${player.ano}º Ano</button>`);
-    
+
     } else if (escolha.correto && statAtual < escolha.req) {
         // FALHA POR FALTA DE STATS
         player.hp -= 2;
         showDialog(`<span style="color:var(--danger)"><b>FALTOU PODER!</b></span><br>A ideia era boa, mas só tinhas ${statAtual} de ${escolha.stat.toUpperCase()} (Exigia ${escolha.req}). Foste esmagado!<br><br><b>Perdeste 2 HP.</b>`, imgs.threat);
         verificarMorteExame();
-    
+
     } else {
         // ESCOLHA ERRADA
         player.hp -= 2;
@@ -953,4 +1171,27 @@ function dispararGameOver(motivo) {
     document.getElementById('id-atk').innerText = player.atk;
     document.getElementById('id-int').innerText = player.int;
     document.getElementById('id-year').innerText = "Encerrado";
+}
+
+function voltarAoMenu() {
+    // Pausa o jogo e salva o progresso imediatamente
+    clearInterval(idleTimer);
+    autoSave();
+
+    // Esconde todas as interfaces do jogo atual
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('idle-progress-container').style.display = 'none';
+    document.getElementById('stage').style.display = 'none';
+    document.getElementById('dialog-box').style.display = 'none';
+    document.getElementById('action-panel').style.display = 'none';
+    document.getElementById('player-hand').style.display = 'none';
+    document.getElementById('screen-creation').style.display = 'none';
+
+    // Oculta os modais de inventário e social, caso estejam abertos
+    document.getElementById('modal-inventario').style.display = 'none';
+    document.getElementById('modal-social').style.display = 'none';
+
+    // Exibe o Menu Principal e atualiza os dados
+    carregarDadosGlobais(); // Atualiza a cor/estado do botão Continuar
+    document.getElementById('screen-main-menu').style.display = 'flex';
 }

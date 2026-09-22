@@ -50,6 +50,14 @@ input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #555;
 .id-rank { margin-top: 20px; font-size: 18px; font-weight: bold; color: #fff; text-align: center; padding: 10px; width: 100%; border-radius: 5px; box-sizing: border-box; }
 .card-img { width: 100%; height: 80px; object-fit: contain; margin-bottom: 10px; border-radius: 4px; }
 
+/* Efeito de Silhueta para a dex */
+.dex-oculta img {
+    filter: brightness(0) invert(0);
+    opacity: 0.6;
+}
+.dex-oculta .card-name {
+    color: #555;
+}
 
 
 .selection-section { margin-bottom: 25px; }

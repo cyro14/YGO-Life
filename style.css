@@ -56,7 +56,8 @@ input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #555;
     opacity: 0.6;
 }
 .dex-oculta .card-name {
-    color: #555;
+    background: #111 !important;
+    border-color: #333 !important;
 }
 
 

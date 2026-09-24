@@ -24,7 +24,7 @@
                 <button onclick="abrirSlotsNovoJogo()" class="btn-primary"
                     style="background: #2980b9; padding: 15px; font-size: 16px;">🆕 Novo Jogo</button>
                 <button onclick="abrirColecoes()" class="btn-primary"
-                    style="background: #8e44ad; padding: 15px; font-size: 16px;">📖 Coleções (Pokédex)</button>
+                    style="background: #8e44ad; padding: 15px; font-size: 16px;">📖 Coleções</button>
             </div>
         </div>
 
@@ -37,20 +37,35 @@
             <button onclick="fecharSlots()" class="btn-primary" style="background: #555;">Cancelar</button>
         </div>
 
-        <!-- 3. MODAL DE COLEÇÕES (Pokédex) -->
-        <div id="modal-colecoes"
-            style="display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: #111; border: 3px solid #8e44ad; border-radius: 10px; z-index: 210; box-sizing: border-box; flex-direction: column;">
-            <div
-                style="background: #8e44ad; color: white; padding: 15px; text-align: center; font-weight: bold; border-radius: 7px 7px 0 0; display: flex; justify-content: space-between;">
-                <span>📚 Enciclopédia de Duelista</span>
-                <span id="pokedex-progresso">0/0</span>
-            </div>
-            <div id="colecoes-conteudo"
-                style="flex-grow: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start;">
-            </div>
-            <button onclick="fecharColecoes()" class="btn-primary"
-                style="margin: 10px; border-radius: 5px; background: #555;">Voltar ao Menu</button>
+        <!-- 3. MODAL DE COLEÇÕES -->
+    <div id="modal-colecoes" style="display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: #111; border: 3px solid #8e44ad; border-radius: 10px; z-index: 210; box-sizing: border-box; flex-direction: column;">
+        
+        <!-- Cabeçalho -->
+        <div style="background: #8e44ad; color: white; padding: 12px 15px; text-align: center; font-weight: bold; border-radius: 7px 7px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <span>📚 Enciclopédia de Duelista</span>
+            <span id="dex-progresso" style="font-size: 13px;">0/0</span>
         </div>
+
+        <!-- Abas de Categorias -->
+        <div style="display: flex; background: #222; border-bottom: 2px solid #8e44ad;">
+            <button onclick="renderizarAbaColecao('cartas')" id="aba-col-cartas" style="flex:1; border:none; background:#8e44ad; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">🎴 Cartas</button>
+            <button onclick="renderizarAbaColecao('lanches')" id="aba-col-lanches" style="flex:1; border:none; background:#333; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">🥪 Lanches</button>
+            <button onclick="renderizarAbaColecao('personagens')" id="aba-col-personagens" style="flex:1; border:none; background:#333; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">👥 Parceiros</button>
+        </div>
+
+        <!-- Conteúdo Dinâmico (Grid de itens) -->
+        <div id="colecoes-conteudo" style="flex-grow: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start;"></div>
+
+        <button onclick="fecharColecoes()" class="btn-primary" style="margin: 10px; border-radius: 5px; background: #555;">Voltar ao Menu</button>
+    </div>
+
+    <!-- 4. MODAL DE ZOOM / INSPEÇÃO DA COLEÇÃO -->
+    <div id="modal-dex-zoom" style="display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 280px; background: #1a1a1a; border: 2px solid #8e44ad; border-radius: 8px; z-index: 220; padding: 15px; box-sizing: border-box; flex-direction: column; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.9);">
+        <img id="zoom-dex-img" src="" style="width: 120px; height: 160px; object-fit: cover; margin: 0 auto 10px; border-radius: 4px; border: 2px solid #8e44ad;">
+        <h3 id="zoom-dex-nome" style="margin: 0 0 5px; color: var(--gold); font-size: 15px;">???</h3>
+        <p id="zoom-dex-desc" style="font-size: 12px; color: #ccc; margin-bottom: 15px;">Item bloqueado ou sem descrição.</p>
+        <button onclick="fecharZoomDex()" style="background: #8e44ad; padding: 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; color: white;">Fechar</button>
+    </div>
 
         <!-- Tela de Criação -->
         <div id="screen-creation" class="screen" style="display: none;">

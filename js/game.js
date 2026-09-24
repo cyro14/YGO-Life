@@ -177,40 +177,100 @@ function travarMenu(travado) {
     }
 }
 
-// --- SISTEMA DE COLEÇÕES ---
+let abaColecaoAtual = 'cartas';
+
 function abrirColecoes() {
-    let cont = document.getElementById('colecoes-conteudo');
-    let html = '';
-
-    // Junta tudo que pode ser colecionado num array só para renderizar
-    let todosItens = [...lojaItens, ...asesIniciais, ...espiritosIniciais];
-    let total = todosItens.length;
-    let descobertos = 0;
-
-    todosItens.forEach(item => {
-        let isDesbloqueado = globalData.desbloqueados.includes(item.id);
-        let classeExtra = isDesbloqueado ? '' : 'pokedex-oculta';
-        let nomeExibicao = isDesbloqueado ? item.nome : '???';
-        let descExibicao = isDesbloqueado ? item.desc : 'Item desconhecido.';
-        // Se for carta da loja não tem .img, usa uma genérica ou tenta puxar do banco
-        let imgRender = item.img || "assets/images/pxArt.png";
-
-        if (isDesbloqueado) descobertos++;
-
-        html += `
-        <div class="card-item ${classeExtra}" style="pointer-events: none; padding: 10px;">
-            <img src="${imgRender}" class="card-img" style="height: 60px;">
-            <div class="card-name" style="font-size: 11px;">${nomeExibicao}</div>
-        </div>`;
-    });
-
-    document.getElementById('pokedex-progresso').innerText = `${descobertos} / ${total}`;
-    cont.innerHTML = html;
     document.getElementById('modal-colecoes').style.display = 'flex';
+    renderizarAbaColecao('cartas');
 }
 
 function fecharColecoes() {
     document.getElementById('modal-colecoes').style.display = 'none';
+    fecharZoomDex();
+}
+
+function renderizarAbaColecao(aba) {
+    abaColecaoAtual = aba;
+    let cont = document.getElementById('colecoes-conteudo');
+    
+    // Altera a cor das abas visualmente
+    ['cartas', 'lanches', 'personagens'].forEach(a => {
+        let btn = document.getElementById(`aba-col-${a}`);
+        if(btn) btn.style.background = (a === aba) ? '#8e44ad' : '#333';
+    });
+
+    let listaAlvo = [];
+    if (aba === 'cartas') {
+        listaAlvo = lojaItens.filter(i => i.tipo === 'reliquia_real' || i.tipo === 'reliquia');
+    } else if (aba === 'lanches') {
+        listaAlvo = lojaItens.filter(i => i.tipo === 'consumivel_real' || i.tipo === 'consumivel');
+    } else if (aba === 'personagens') {
+        // Puxa os parceiros do array global de Tag Force
+        listaAlvo = parceiros; 
+    }
+
+    let total = listaAlvo.length;
+    let descobertos = 0;
+    let html = '';
+
+    listaAlvo.forEach(item => {
+        let itemId = item.id;
+        
+        // Sincronização retroativa: se já o tem no PDA mas falhou o save global antes, corrige agora
+        if (aba === 'personagens' && player.parceirosDesbloqueados.includes(itemId)) {
+            registrarDesbloqueio(itemId);
+        }
+        
+        let isDesbloqueado = globalData.desbloqueados.includes(itemId);
+        
+        if (isDesbloqueado) descobertos++;
+
+        let classeExtra = isDesbloqueado ? '' : 'pokedex-oculta';
+        let nomeExibicao = isDesbloqueado ? item.nome : '???';
+        let imgRender = isDesbloqueado ? (item.img || 'assets/images/pxArt.png') : 'assets/images/pxArt.png';
+
+        let safeNome = encodeURIComponent(item.nome || item.nome);
+        let safeDesc = encodeURIComponent(item.desc || item.bonusDesc || 'Sem descrição.');
+        let safeImg = encodeURIComponent(imgRender);
+
+        // Lógica visual dos corações
+        let coracoesHtml = '';
+        if (aba === 'personagens' && isDesbloqueado) {
+            let nivel = player.amizades[itemId] || 0;
+            let displayCoracoes = '❤️'.repeat(nivel) + '🤍'.repeat(5 - nivel);
+            coracoesHtml = `<div style="font-size: 8px; margin-top: 4px; letter-spacing: -1px;">${displayCoracoes}</div>`;
+        }
+
+        html += `
+        <div class="card-item ${classeExtra}" onclick="inspecionarDex(${isDesbloqueado}, '${safeNome}', '${safeDesc}', '${safeImg}')" style="background:#1a1a1a; border:1px solid #444; border-radius:6px; padding:8px; text-align:center; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <img src="${imgRender}" style="height: 55px; width: 45px; object-fit: cover; border-radius: 3px; margin-bottom: 3px;">
+            <div style="font-size: 10px; color: ${isDesbloqueado ? '#fff' : '#666'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">${nomeExibicao}</div>
+            ${coracoesHtml}
+        </div>`;
+    });
+    document.getElementById('dex-progresso').innerText = `${descobertos} / ${total} Descobertos`;
+    cont.innerHTML = html;
+}
+
+function inspecionarDex(desbloqueado, safeNome, safeDesc, safeImg) {
+    let nome = decodeURIComponent(safeNome);
+    let desc = decodeURIComponent(safeDesc);
+    let img = decodeURIComponent(safeImg);
+
+    if (!desbloqueado) {
+        nome = "???";
+        desc = "Você ainda não encontrou este item ou carta na sua jornada pela academia.";
+        img = "assets/images/pxArt.png";
+    }
+
+    document.getElementById('zoom-dex-img').src = img;
+    document.getElementById('zoom-dex-nome').innerText = nome;
+    document.getElementById('zoom-dex-desc').innerText = desc;
+    document.getElementById('modal-dex-zoom').style.display = 'flex';
+}
+
+function fecharZoomDex() {
+    document.getElementById('modal-dex-zoom').style.display = 'none';
 }
 
 let abaAtual = 'consumiveis'; // Controla a aba aberta do inventário
@@ -567,17 +627,23 @@ function temBonus(id) {
 
 function dispararEventoSocial() {
     let chance = Math.random();
-    if (chance < 0.8) return false; // 20% de chance de encontrar alguém
+    if (chance < 0.8) return false; 
 
     // Filtra quem pode ser encontrado no ano atual e que ainda não conheces
     let possiveis = parceiros.filter(p => p.anoReq <= player.ano && !player.parceirosDesbloqueados.includes(p.id));
 
     if (possiveis.length === 0) return false;
 
+    // EVENTO ACONTECEU: Trava o menu e pausa o jogo
     travarMenu(true);
     clearInterval(idleTimer);
+    
     let novoAmigo = possiveis[Math.floor(Math.random() * possiveis.length)];
+    
+    // Regista no save da run atual e no save global (Dex)
     player.parceirosDesbloqueados.push(novoAmigo.id);
+    registrarDesbloqueio(novoAmigo.id);
+    autoSave();
 
     showDialog(`<span style="color:#2980b9">🤝 NOVO ENCONTRO!</span><br>Cruzaste com <b>${novoAmigo.nome}</b> no pátio da Academia! Agora tens o contacto dele no teu PDA. Aumenta a amizade para desbloquear o bónus passivo.`, imgs.bg_academy, novoAmigo.img);
 

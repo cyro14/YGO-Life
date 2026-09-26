@@ -194,20 +194,16 @@ function renderizarAbaColecao(aba) {
     let cont = document.getElementById('colecoes-conteudo');
     
     // Altera a cor das abas visualmente
-    ['cartas', 'lanches', 'personagens'].forEach(a => {
+    ['cartas', 'lanches', 'personagens', 'decks'].forEach(a => {
         let btn = document.getElementById(`aba-col-${a}`);
         if(btn) btn.style.background = (a === aba) ? '#8e44ad' : '#333';
     });
 
     let listaAlvo = [];
-    if (aba === 'cartas') {
-        listaAlvo = lojaItens.filter(i => i.tipo === 'reliquia_real' || i.tipo === 'reliquia');
-    } else if (aba === 'lanches') {
-        listaAlvo = lojaItens.filter(i => i.tipo === 'consumivel_real' || i.tipo === 'consumivel');
-    } else if (aba === 'personagens') {
-        // Puxa os parceiros do array global de Tag Force
-        listaAlvo = parceiros; 
-    }
+    if (aba === 'cartas') listaAlvo = lojaItens.filter(i => i.tipo === 'reliquia_real' || i.tipo === 'reliquia');
+    else if (aba === 'lanches') listaAlvo = lojaItens.filter(i => i.tipo === 'consumivel_real' || i.tipo === 'consumivel');
+    else if (aba === 'personagens') listaAlvo = parceiros; 
+    else if (aba === 'decks') listaAlvo = decksIniciais; // Puxa do data.js
 
     let total = listaAlvo.length;
     let descobertos = 0;
@@ -215,14 +211,9 @@ function renderizarAbaColecao(aba) {
 
     listaAlvo.forEach(item => {
         let itemId = item.id;
-        
-        // Sincronização retroativa: se já o tem no PDA mas falhou o save global antes, corrige agora
-        if (aba === 'personagens' && player.parceirosDesbloqueados.includes(itemId)) {
-            registrarDesbloqueio(itemId);
-        }
+        if (aba === 'personagens' && player.parceirosDesbloqueados.includes(itemId)) registrarDesbloqueio(itemId);
         
         let isDesbloqueado = globalData.desbloqueados.includes(itemId);
-        
         if (isDesbloqueado) descobertos++;
 
         let classeExtra = isDesbloqueado ? '' : 'pokedex-oculta';
@@ -230,10 +221,20 @@ function renderizarAbaColecao(aba) {
         let imgRender = isDesbloqueado ? (item.img || 'assets/images/pxArt.png') : 'assets/images/pxArt.png';
 
         let safeNome = encodeURIComponent(item.nome || item.nome);
-        let safeDesc = encodeURIComponent(item.desc || item.bonusDesc || 'Sem descrição.');
+        let textoDescricao = item.desc || item.bonusDesc || 'Sem descrição.';
+
+        // SE FOR DECK, BUSCAMOS OS ASES DESBLOQUEADOS DELE!
+        if (aba === 'decks') {
+            let asesDesteDeck = asesIniciais.filter(a => a.deckReq === itemId);
+            let asesEncontrados = asesDesteDeck.filter(a => globalData.desbloqueados.includes(a.id));
+            let listaNomes = asesEncontrados.map(a => `⭐ ${a.nome}`).join('\n');
+            
+            textoDescricao = `Ases Descobertos:\n${listaNomes || 'Nenhum ás descoberto.'}`;
+        }
+
+        let safeDesc = encodeURIComponent(textoDescricao);
         let safeImg = encodeURIComponent(imgRender);
 
-        // Lógica visual dos corações
         let coracoesHtml = '';
         if (aba === 'personagens' && isDesbloqueado) {
             let nivel = player.amizades[itemId] || 0;
@@ -248,6 +249,7 @@ function renderizarAbaColecao(aba) {
             ${coracoesHtml}
         </div>`;
     });
+
     document.getElementById('dex-progresso').innerText = `${descobertos} / ${total} Descobertos`;
     cont.innerHTML = html;
 }
@@ -847,123 +849,140 @@ function mudarFoco() {
     iniciarIdleLoop();
 }
 
+// Variável de controle do duelo atual
+let dueloAtual = {
+    poderOponente: 0, poderJogador: 0, recompensa: null
+};
+
 // --- EVENTOS ESPECIAIS ---
 function dispararEventoAleatorio() {
     let chance = Math.random();
-
-    // Bloqueio das Espadas da Luz Reveladora
-    if (player.reliquias.includes('espadas_luz') && player.mes === 1) return false;
-
-    if (chance < 0.7) return false;
-
+    
+    // As Espadas defendem e bloqueiam o evento!
     if (player.protecaoEspadas > 0) {
         player.protecaoEspadas--;
         travarMenu(true);
         clearInterval(idleTimer);
-        showDialog(`Um valentão saltou das sombras, mas as <b>Espadas da Luz Reveladora</b> formaram uma barreira intransponível! Ele fugiu cego.<br><br><i>(Cargas restantes das Espadas: ${player.protecaoEspadas})</i>`, imgs.bg_academy);
+        showDialog(`Um valentão saltou das sombras, mas as <b>Espadas da Luz Reveladora</b> formaram uma barreira intransponível! Ele fugiu cego.<br><br><i>(Cargas restantes: ${player.protecaoEspadas})</i>`, imgs.bg_academy);
         renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar</button>`);
-        return true;
+        return true; 
     }
+
+    if (chance < 0.6) return false;
 
     travarMenu(true);
-
     clearInterval(idleTimer);
 
-    let reqAtk = 5 + (player.mes * 4) + (player.semana * 2) + Math.floor(Math.random() * 5);
-    let custoFuga = 15 + (player.mes * 20);
+    // Usa o maior status (ATK ou INT) como base para não punir quem foca nos estudos
+    let baseStatus = Math.max(player.atk, player.int);
+    
+    // O poder do oponente escala com o progresso do jogador
+    dueloAtual.poderOponente = 15 + (player.mes * 10) + (player.semana * 5) + Math.floor(Math.random() * 20);
+    dueloAtual.poderJogador = baseStatus;
 
-    showDialog(`<span style="color:var(--danger)">⚠️ EMBOSCADA!</span><br>Um veterano furioso bloqueia seu caminho! "Pague o pedágio de ${custoFuga} DP ou duele!"<br><br><i>A postura dele é intimidadora. Você não tem certeza se o seu ATK (${player.atk}) é suficiente para vencê-lo...</i>`, imgs.bg_abandoned);
+    // Sorteia a recompensa (uma carta da loja)
+    let poolCartas = lojaItens.filter(i => i.tipo === 'reliquia_real');
+    dueloAtual.recompensa = poolCartas[Math.floor(Math.random() * poolCartas.length)];
 
-    // CORREÇÃO: Declarando a variável botoes com 'let'
-    let botoes = `
-        <button onclick="resolverEventoAtaque(${reqAtk})" class="btn-danger">Arriscar Duelo</button>
-        <button onclick="pagarValentao(${custoFuga})" style="background:#f39c12">Pagar ${custoFuga} DP e Fugir</button>
-    `;
+    let oponentes = ["Valentão do Obelisco", "Membro dos Caçadores de Sombras", "Veterano Revoltado"];
+    let nomeOponente = oponentes[Math.floor(Math.random() * oponentes.length)];
 
-    // Verifica se o jogador tem a Força Espelho
-    if (player.reliquias.includes('forca_espelho')) {
-        botoes += `<button onclick="ativarArmadilhaBatalha('forca_espelho')" style="background:#bc1c6c; color: white; border-color: #fff;">Ativar Armadilha: Força Espelho</button>`;
-    }
+    showDialog(`<span style="color:var(--danger)">⚠️ DUELO DE APOSTA!</span><br><b>${nomeOponente}</b> bloqueia o corredor!<br><br>"Se me vencer, leva a minha carta <b>${dueloAtual.recompensa.nome}</b>. Se perder, sofre as consequências!"<br><br><b>Poder dele: <span style="color:var(--danger)">${dueloAtual.poderOponente}</span></b><br><b>Seu Poder: <span style="color:var(--success)">${dueloAtual.poderJogador}</span></b>`, imgs.bg_abandoned);
 
-    renderButtons(botoes);
-
+    renderizarMesaAposta();
     return true;
 }
 
-function ativarArmadilhaBatalha(id) {
-    if (id === 'forca_espelho') {
-        // Remove a carta da mão
-        let index = player.reliquias.indexOf('forca_espelho');
-        player.reliquias.splice(index, 1);
-        renderizarMao();
+function renderizarMesaAposta() {
+    let botoesMao = '';
+    
+    // Desenha os botões para as cartas na mão
+    player.reliquias.forEach((relId, index) => {
+        let item = lojaItens.find(i => i.id === relId);
+        if (!item) return;
 
-        let recompensa = 25 * player.mes;
-        player.dp += recompensa;
-        updateHUD();
-
-        showDialog(`<b>VOCÊ ATIVOU UMA CARTA ARMADILHA!</b><br>A <b>Força Espelho</b> estilhaçou o ataque do veterano e varreu o campo dele! Você venceu instantaneamente e pegou ${recompensa} DP!`, imgs.duel);
-        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar Rotina</button>`);
-    }
-}
-
-function resolverEventoAtaque(requisito) {
-    if (player.atk >= requisito) {
-        let recompensa = 25 * player.mes;
-        // Bônus passivo do Des Koala (Monstro Ás)
-        if (player.ace === 'koala') recompensa += 5;
-
-        player.dp += recompensa;
-        updateHUD();
-        showDialog(`<span style="color:var(--success)"><b>VITÓRIA ESMAGADORA!</b></span><br>Você superou as expectativas e venceu! Recolheu <b>${recompensa} DP</b> do veterano.`, imgs.duel);
-    } else {
-        // Verifica se tem Força Espelho para refletir a derrota
-        if (player.reliquias.includes('forca_espelho')) {
-            player.reliquias = player.reliquias.filter(r => r !== 'forca_espelho');
-            showDialog(`<b>DERROTA IMINENTE... MAS ESPERE!</b><br>Sua <b>Força Espelho</b> foi ativada, destruindo os monstros do oponente antes do ataque final! Você saiu ileso, mas a carta foi consumida.`, imgs.duel);
-        } else {
-            player.hp--;
-            showDialog(`<span style="color:var(--danger)"><b>DERROTA!</b></span><br>Os monstros dele eram muito mais fortes (${requisito} ATK). Você apanhou no duelo e perdeu <b>1 HP</b> pelo desgaste.`, imgs.threat);
+        if (item.id === 'forca_espelho') {
+            botoesMao += `<button onclick="usarArmadilhaAposta(${index})" style="background:#bc1c6c; color: white; border-color: #fff; margin-bottom:5px; width: 100%;">Ativar: Força Espelho (Vitória Imediata)</button>`;
+        } else if (item.subTipo === 'magia_normal') {
+            botoesMao += `<button onclick="queimarCartaAposta(${index})" style="background:#009966; color:white; margin-bottom:5px; width: 100%;">Descartar ${item.nome} (+20 Poder)</button>`;
         }
-        updateHUD();
-    }
+    });
 
-    if (player.hp <= 0) {
-        checarMorte();
-    } else {
-        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar Rotina</button>`);
-    }
+    let btnBatalha = dueloAtual.poderJogador >= dueloAtual.poderOponente 
+        ? `<button onclick="resolverDueloAposta(true)" class="btn-success">Atacar e Vencer! (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`
+        : `<button onclick="resolverDueloAposta(false)" class="btn-danger">Arriscar Derrota (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`;
+
+    renderButtons(`
+        <div style="font-size: 14px; margin-bottom: 10px; color: var(--gold); font-weight: bold; text-align: center;">Mesa de Estratégia</div>
+        ${botoesMao}
+        <hr style="border-color:#444; margin: 10px 0;">
+        ${btnBatalha}
+        <button onclick="fugirDueloAposta()" style="background:#f39c12">Fugir e perder 1 HP</button>
+    `);
 }
 
-function pagarValentao(custo) {
-    if (player.dp >= custo) {
-        player.dp -= custo;
-        updateHUD();
-        showDialog(`Você entregou os ${custo} DP. O valentão riu e te deixou passar. A dignidade dói, mas os Pontos de Vida estão intactos.`, imgs.threat);
-        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Engolir o orgulho e continuar</button>`);
-    } else {
-        showDialog(`Você não tem ${custo} DP! O valentão percebeu que você está quebrado e atacou!`, imgs.threat);
-        // Força a derrota automaticamente já que não tem dinheiro nem quis lutar
-        renderButtons(`<button onclick="resolverEventoAtaque(9999)" class="btn-danger">Sofrer as consequências</button>`);
-    }
+function queimarCartaAposta(index) {
+    // Consome a carta da mão para dar um boost imediato de +20 Poder na aposta
+    player.reliquias.splice(index, 1);
+    dueloAtual.poderJogador += 20;
+    
+    updateHUD();
+    renderizarMao();
+    
+    // Atualiza o texto do diálogo e os botões em tempo real
+    let htmlAtual = ui.dialog.innerHTML;
+    let novoTexto = htmlAtual.replace(/Seu Poder: <span style="color:var\(--success\)">\d+<\/span>/, `Seu Poder: <span style="color:var(--success)">${dueloAtual.poderJogador}</span>`);
+    ui.dialog.innerHTML = novoTexto;
+    
+    renderizarMesaAposta();
 }
 
-function resolverEventoAtaque(requisito) {
-    if (player.atk >= requisito) {
-        let recompensa = 30 * player.ano;
-        player.dp += recompensa;
-        updateHUD();
-        showDialog(`<span style="color:var(--success)"><b>VITÓRIA!</b></span><br>Seus monstros destruíram o campo dele. Você pegou <b>${recompensa} DP</b>!`, imgs.duel);
+function usarArmadilhaAposta(index) {
+    player.reliquias.splice(index, 1);
+    updateHUD();
+    renderizarMao();
+    showDialog(`<b>MESA VIRADA!</b><br>Você ativou a <b>Força Espelho</b>! O ataque do oponente foi refletido de volta para ele. Você venceu a aposta independentemente da diferença de poder!`, imgs.duel);
+    ganharDueloAposta();
+}
+
+function resolverDueloAposta(venceu) {
+    if (venceu) {
+        showDialog(`<span style="color:var(--success)"><b>VITÓRIA TÁTICA!</b></span><br>Seus ${dueloAtual.poderJogador} de Poder superaram a defesa do adversário! Ele entregou o prêmio furioso.`, imgs.duel);
+        ganharDueloAposta();
     } else {
         player.hp--;
+        showDialog(`<span style="color:var(--danger)"><b>DERROTA!</b></span><br>Sua força não foi suficiente. Ele esmagou seus monstros e você perdeu <b>1 HP</b> pelo desgaste da aposta.`, imgs.threat);
         updateHUD();
-        showDialog(`<span style="color:var(--danger)"><b>DERROTA!</b></span><br>Ele ativou uma armadilha e apagou seus monstros. Você perdeu <b>1 HP</b> pelo desgaste físico do dano real.`, imgs.threat);
+        checarMorteDuelo();
     }
+}
 
-    if (player.hp <= 0) {
-        checarMorte();
-    } else {
-        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar Rotina</button>`);
-    }
+function ganharDueloAposta() {
+    let item = dueloAtual.recompensa;
+    player.reliquias.push(item.id);
+    registrarDesbloqueio(item.id);
+    
+    let dpGanha = 40 * player.mes;
+    player.dp += dpGanha;
+    
+    updateHUD();
+    renderizarMao();
+    autoSave();
+    
+    ui.dialog.innerHTML += `<br><br><b>Recompensas Adquiridas:</b><br>🎴 Carta: ${item.nome}<br>🪙 ${dpGanha} DP`;
+    renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Guardar recompensas e continuar</button>`);
+}
+
+function fugirDueloAposta() {
+    player.hp--;
+    updateHUD();
+    showDialog(`Você não quis arriscar suas cartas e fugiu covardemente da aposta. O estresse de ser perseguido te fez perder 1 HP.`, imgs.threat);
+    checarMorteDuelo();
+}
+
+function checarMorteDuelo() {
+    if (player.hp <= 0) checarMorte(); // Usa a função de morte padrão
+    else renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Lamber as feridas e continuar</button>`);
 }
 
 function eventoAulaSexta() {
@@ -978,6 +997,19 @@ function eventoAulaSexta() {
     }).join("");
 
     renderButtons(botoes);
+}
+
+function pagarValentao(custo) {
+    if (player.dp >= custo) {
+        player.dp -= custo;
+        updateHUD();
+        showDialog(`Você entregou os ${custo} DP. O valentão riu e te deixou passar. A dignidade dói, mas os Pontos de Vida estão intactos.`, imgs.threat);
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Engolir o orgulho e continuar</button>`);
+    } else {
+        showDialog(`Você não tem ${custo} DP! O valentão percebeu que você está quebrado e atacou!`, imgs.threat);
+        // Força a derrota automaticamente já que não tem dinheiro nem quis lutar
+        renderButtons(`<button onclick="resolverEventoAtaque(9999)" class="btn-danger">Sofrer as consequências</button>`);
+    }
 }
 
 function responderTrivia(escolha, correta) {
@@ -1326,6 +1358,7 @@ function resolverPuzzleAdmissao(deckId, opcIndex) {
     if (escolha.correto && statAtual >= escolha.req) {
         // PASSOU NA ADMISSÃO
 
+        registrarDesbloqueio(player.deck);
         registrarDesbloqueio(player.ace);
         registrarDesbloqueio(player.spirit);
 

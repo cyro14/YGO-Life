@@ -10,9 +10,14 @@ let player = {
     equipados: { disco: null, deckbox: null }, // Slots de equipamento
     parceirosDesbloqueados: [],
     amizades: { syrus: 0, jaden: 0, bastion: 0, zane: 0 },
-    socialSemana: {}, protecaoEspadas: 0
+    socialSemana: {}, protecaoEspadas: 0,
 };
 window.estadoEvento = null;
+
+let idxGaleriaDeck = 0;
+let idxGaleriaAce = 0;
+let idxGaleriaSpirit = 0;
+let asesFiltrados = [];
 
 // --- SISTEMA DE SAVE E VARIÁVEIS GLOBAIS ---
 let currentSlot = 1;
@@ -41,7 +46,6 @@ function autoSave() {
 // --- CONTROLE DOS MENUS INICIAIS ---
 window.onload = () => {
     carregarDadosGlobais();
-    renderizarMenuInicial();
 
     // Força o bloqueio de todas as outras telas no carregamento
     document.getElementById('screen-creation').style.display = 'none';
@@ -153,10 +157,10 @@ function fecharSlots() {
 function iniciarCriacaoNovoJogo(slot) {
     currentSlot = slot;
     document.getElementById('modal-slots').style.display = 'none';
-    document.getElementById('screen-main-menu').style.display = 'none'; // Esconde o menu principal
-    ui.creation.style.display = 'flex'; // Mostra a tela de criação
+    document.getElementById('screen-main-menu').style.display = 'none';
+    document.getElementById('screen-creation').style.display = 'flex';
 
-    // Reseta o player para o padrão antes de começar
+    // Reseta o jogador
     player = {
         name: "", deck: "", ace: "", spirit: "", dormitorio: "Slifer Vermelho",
         hp: 3, maxHp: 3, dp: 0, atk: 0, int: 0,
@@ -164,8 +168,169 @@ function iniciarCriacaoNovoJogo(slot) {
         foco: 'duelo', reliquias: [], equipamentos: [], consumiveis: [],
         equipados: { disco: null, deckbox: null },
         parceirosDesbloqueados: [], amizades: { syrus: 0, jaden: 0, bastion: 0, zane: 0 },
-        socialSemana: {}
+        socialSemana: {}, protecaoEspadas: 0
     };
+
+    player.cargasAvian = 3;
+    player.gyroidUsadoMes = false;
+    idxGaleriaDeck = 0;
+    idxGaleriaSpirit = 0;
+
+    irParaEtapa(1); // Abre a tela do nome
+    atualizarDisplayGaleria('deck');
+    atualizarDisplayGaleria('spirit');
+}
+
+function irParaEtapa(etapa) {
+    document.getElementById('step-1-name').style.display = (etapa === 1) ? 'flex' : 'none';
+    document.getElementById('step-2-deck').style.display = (etapa === 2) ? 'flex' : 'none';
+    document.getElementById('step-3-ace').style.display = (etapa === 3) ? 'flex' : 'none';
+    document.getElementById('step-4-spirit').style.display = (etapa === 4) ? 'flex' : 'none';
+}
+
+function mudarGaleria(tipo, direcao) {
+    let max = 0;
+    if (tipo === 'deck') {
+        max = decksIniciais.length;
+        idxGaleriaDeck = (idxGaleriaDeck + direcao + max) % max;
+    } else if (tipo === 'spirit') {
+        max = espiritosIniciais.length;
+        idxGaleriaSpirit = (idxGaleriaSpirit + direcao + max) % max;
+    } else if (tipo === 'ace') {
+        max = asesFiltrados.length;
+        if (max > 0) idxGaleriaAce = (idxGaleriaAce + direcao + max) % max;
+    }
+    atualizarDisplayGaleria(tipo);
+}
+
+function atualizarDisplayGaleria(tipo) {
+    if (tipo === 'deck') {
+        let d = decksIniciais[idxGaleriaDeck];
+        let liberado = d.padrao || globalData.desbloqueados.includes(d.id);
+
+        let asDoDeck = asesIniciais.find(a => a.deckReq === d.id);
+        let asInfo = asDoDeck ? `
+            <div style="margin-top:20px; padding-top:15px; border-top:1px solid #444; width: 100%;">
+                <div style="font-size: 11px; color: var(--gold); font-weight: bold; margin-bottom: 5px;">👑 MONSTRO ÁS INCLUSO</div>
+                <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #fff;">${asDoDeck.nome}</div>
+                <div style="font-size: 11px; color: #aaa; line-height: 1.4;">${asDoDeck.desc}</div>
+            </div>
+        ` : '';
+
+        let container = document.getElementById('gallery-deck-display');
+        let btnConfirm = document.getElementById('btn-confirm-deck');
+
+        if (liberado) {
+            container.innerHTML = `
+                <div style="font-size: 70px; line-height: 1;">${d.emoji}</div>
+                <h3 style="margin: 15px 0 10px; color: #fff; font-size: 22px;">${d.nome}</h3>
+                <div style="display:flex; justify-content:space-between; width: 100%; color:#fff; font-size:13px; background: #222; padding: 10px; border-radius: 6px; box-sizing: border-box;">
+                    <span>⚔️ ATK: <b style="color:var(--danger)">${d.baseAtk}</b></span>
+                    <span>🧠 INT: <b style="color:#3498db">${d.baseInt}</b></span>
+                    <span>❤️ HP: <b style="color:#e74c3c">${d.hp}</b></span>
+                </div>
+                ${asInfo}
+            `;
+            btnConfirm.disabled = false;
+            btnConfirm.innerText = "Escolher Deck ➔";
+            btnConfirm.style.background = "#27ae60";
+            btnConfirm.style.opacity = "1";
+        } else {
+            container.innerHTML = `
+                <div style="font-size: 70px; line-height: 1; filter: grayscale(100%) brightness(0.2);">${d.emoji}</div>
+                <h3 style="margin: 15px 0 10px; color: #666; font-size: 22px;">???</h3>
+                <div style="color: #555; font-size: 13px; margin-top: 20px; text-align: left; background: #111; padding: 15px; border-radius: 6px;">
+                    <b style="color:#888">Como Desbloquear:</b><br>${d.dica || 'Continue jogando para descobrir.'}
+                </div>
+            `;
+            btnConfirm.disabled = true;
+            btnConfirm.innerText = "Deck Bloqueado";
+            btnConfirm.style.background = "#444";
+            btnConfirm.style.opacity = "0.5";
+        }
+    }// Dentro de atualizarDisplayGaleria(tipo)...
+    else if (tipo === 'ace') {
+        let container = document.getElementById('gallery-ace-display');
+        let btnConfirm = document.getElementById('btn-confirm-ace');
+
+        if (asesFiltrados.length === 0) {
+            container.innerHTML = `<h3 style="color:#666;">Nenhum Ás disponível para este Deck.</h3>`;
+            btnConfirm.disabled = false;
+            return;
+        }
+
+        let a = asesFiltrados[idxGaleriaAce];
+        let liberado = a.padrao || globalData.desbloqueados.includes(a.id);
+
+        if (liberado) {
+            container.innerHTML = `
+                <img src="${a.img || 'assets/images/pxArt.png'}" style="width: 140px; height: 204px; object-fit: cover; border-radius: 4px; border: 2px solid #e74c3c; margin-bottom: 15px;">
+                <h3 style="margin: 0 0 10px; color: #fff; font-size: 20px;">${a.nome}</h3>
+                <p style="font-size: 12px; color: #aaa; line-height: 1.5; margin: 0;">${a.desc}</p>
+            `;
+            btnConfirm.disabled = false;
+            btnConfirm.innerText = "Escolher Ás ➔";
+            btnConfirm.style.background = "#27ae60";
+            btnConfirm.style.opacity = "1";
+        } else {
+            container.innerHTML = `
+                <img src="${a.img || 'assets/images/pxArt.png'}" style="width: 140px; height: 204px; object-fit: cover; border-radius: 4px; border: 2px solid #333; margin-bottom: 15px; filter: brightness(0) invert(0.1);">
+                <h3 style="margin: 0 0 10px; color: #666; font-size: 20px;">???</h3>
+                <p style="font-size: 11px; color: #555; background: #111; padding: 10px; border-radius: 4px;"><b>Bloqueado</b></p>
+            `;
+            btnConfirm.disabled = true;
+            btnConfirm.innerText = "Ás Bloqueado";
+            btnConfirm.style.background = "#444";
+            btnConfirm.style.opacity = "0.5";
+        }
+    }
+    else {
+        let s = espiritosIniciais[idxGaleriaSpirit];
+        let liberado = s.padrao || globalData.desbloqueados.includes(s.id);
+        let container = document.getElementById('gallery-spirit-display');
+        let btnStart = document.getElementById('btn-start');
+
+        if (liberado) {
+            container.innerHTML = `
+                <img src="${s.img || 'assets/images/pxArt.png'}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 2px solid #3498db; margin-bottom: 15px;">
+                <h3 style="margin: 0 0 10px; color: #fff; font-size: 20px;">${s.nome}</h3>
+                <p style="font-size: 13px; color: #aaa; line-height: 1.5; margin: 0;">${s.desc}</p>
+            `;
+            btnStart.disabled = false;
+            btnStart.innerText = "Matricular-se! 🎓";
+            btnStart.style.background = "#27ae60";
+            btnStart.style.opacity = "1";
+        } else {
+            container.innerHTML = `
+                <img src="${s.img || 'assets/images/pxArt.png'}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 2px solid #333; margin-bottom: 15px; filter: brightness(0) invert(0.1);">
+                <h3 style="margin: 0 0 10px; color: #666; font-size: 20px;">???</h3>
+                <p style="font-size: 12px; color: #555; margin: 0; text-align: left; background: #111; padding: 10px; border-radius: 4px;"><b>Como Desbloquear:</b><br>${s.dica || 'Continue jogando.'}</p>
+            `;
+            btnStart.disabled = true;
+            btnStart.innerText = "Espírito Bloqueado";
+            btnStart.style.background = "#444";
+            btnStart.style.opacity = "0.5";
+        }
+    }
+}
+
+function confirmarDeck() {
+    let d = decksIniciais[idxGaleriaDeck];
+    selecaoAtual.deck = d.id;
+
+    // Filtra os Ases correspondentes ao deck escolhido
+    asesFiltrados = asesIniciais.filter(a => a.deckReq === d.id);
+    idxGaleriaAce = 0;
+
+    atualizarDisplayGaleria('ace');
+    irParaEtapa(3);
+}
+
+function confirmarAce() {
+    if (asesFiltrados.length > 0) {
+        selecaoAtual.ace = asesFiltrados[idxGaleriaAce].id;
+    }
+    irParaEtapa(4);
 }
 
 function travarMenu(travado) {
@@ -195,17 +360,17 @@ function fecharColecoes() {
 function renderizarAbaColecao(aba) {
     abaColecaoAtual = aba;
     let cont = document.getElementById('colecoes-conteudo');
-    
+
     // Altera a cor das abas visualmente
     ['cartas', 'lanches', 'personagens', 'decks'].forEach(a => {
         let btn = document.getElementById(`aba-col-${a}`);
-        if(btn) btn.style.background = (a === aba) ? '#8e44ad' : '#333';
+        if (btn) btn.style.background = (a === aba) ? '#8e44ad' : '#333';
     });
 
     let listaAlvo = [];
     if (aba === 'cartas') listaAlvo = lojaItens.filter(i => i.tipo === 'reliquia_real' || i.tipo === 'reliquia');
     else if (aba === 'lanches') listaAlvo = lojaItens.filter(i => i.tipo === 'consumivel_real' || i.tipo === 'consumivel');
-    else if (aba === 'personagens') listaAlvo = parceiros; 
+    else if (aba === 'personagens') listaAlvo = parceiros;
     else if (aba === 'decks') listaAlvo = decksIniciais; // Puxa do data.js
 
     let total = listaAlvo.length;
@@ -215,7 +380,7 @@ function renderizarAbaColecao(aba) {
     listaAlvo.forEach(item => {
         let itemId = item.id;
         if (aba === 'personagens' && player.parceirosDesbloqueados.includes(itemId)) registrarDesbloqueio(itemId);
-        
+
         let isDesbloqueado = globalData.desbloqueados.includes(itemId);
         if (isDesbloqueado) descobertos++;
 
@@ -231,7 +396,7 @@ function renderizarAbaColecao(aba) {
             let asesDesteDeck = asesIniciais.filter(a => a.deckReq === itemId);
             let asesEncontrados = asesDesteDeck.filter(a => globalData.desbloqueados.includes(a.id));
             let listaNomes = asesEncontrados.map(a => `⭐ ${a.nome}`).join('\n');
-            
+
             textoDescricao = `Ases Descobertos:\n${listaNomes || 'Nenhum ás descoberto.'}`;
         }
 
@@ -283,29 +448,6 @@ let abaAtual = 'consumiveis'; // Controla a aba aberta do inventário
 // Variáveis temporárias para a tela de criação
 let selecaoAtual = { deck: null, spirit: null };
 
-// Desenha a tela de criação ao abrir o jogo
-function renderizarMenuInicial() {
-    const deckGrid = document.getElementById('deck-grid');
-    const spiritGrid = document.getElementById('spirit-grid');
-
-    // 1. Renderiza Decks (Agora puxando apenas nome e status base)
-    deckGrid.innerHTML = decksIniciais.map(d => `
-        <div class="card-item" id="deck-${d.id}" onclick="selecionarOpcao('deck', '${d.id}')">
-            <div class="card-emoji" style="font-size: 40px;">${d.emoji}</div>
-            <div class="card-name">${d.nome}</div>
-            <div class="card-desc">ATK: ${d.baseAtk} | INT: ${d.baseInt}</div>
-        </div>
-    `).join('');
-
-    // 2. Renderiza Espíritos (Usando a tag <img> em vez de emojis)
-    spiritGrid.innerHTML = espiritosIniciais.map(s => `
-        <div class="card-item" id="spirit-${s.id}" onclick="selecionarOpcao('spirit', '${s.id}')">
-            <img src="${s.img}" class="card-img" alt="${s.nome}" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div style=\\'font-size:10px; color:red;\\'>Imagem não encontrada</div>');">
-            <div class="card-name">${s.nome}</div>
-            <div class="card-desc">${s.desc}</div>
-        </div>
-    `).join('');
-}
 
 // --- CONTROLE DE TELA CHEIA ---
 function toggleFullScreen() {
@@ -632,7 +774,7 @@ function temBonus(id) {
 
 function dispararEventoSocial() {
     let chance = Math.random();
-    if (chance < 0.8) return false; 
+    if (chance < 0.8) return false;
 
     // Filtra quem pode ser encontrado no ano atual e que ainda não conheces
     let possiveis = parceiros.filter(p => p.anoReq <= player.ano && !player.parceirosDesbloqueados.includes(p.id));
@@ -642,9 +784,9 @@ function dispararEventoSocial() {
     // EVENTO ACONTECEU: Trava o menu e pausa o jogo
     travarMenu(true);
     clearInterval(idleTimer);
-    
+
     let novoAmigo = possiveis[Math.floor(Math.random() * possiveis.length)];
-    
+
     // Regista no save da run atual e no save global (Dex)
     player.parceirosDesbloqueados.push(novoAmigo.id);
     registrarDesbloqueio(novoAmigo.id);
@@ -716,9 +858,13 @@ function renderButtons(buttonsHTML) {
 }
 
 function startGame() {
+    // Captura o nome e o espírito final
     player.name = document.getElementById('playerName').value || "Novato";
     player.deck = selecaoAtual.deck;
     player.ace = selecaoAtual.ace;
+
+    let s = espiritosIniciais[idxGaleriaSpirit];
+    selecaoAtual.spirit = s.id;
     player.spirit = selecaoAtual.spirit;
 
     // Define status base do DECK
@@ -728,7 +874,7 @@ function startGame() {
     player.hp = deckBase.hp;
     player.maxHp = deckBase.hp;
 
-    // BLINDAGEM: Força as telas antigas a sumirem
+    // BLINDAGEM: Esconde as telas de menu
     document.getElementById('screen-creation').style.display = 'none';
     document.getElementById('screen-main-menu').style.display = 'none';
 
@@ -860,7 +1006,7 @@ let dueloAtual = {
 // --- EVENTOS ESPECIAIS ---
 function dispararEventoAleatorio() {
     let chance = Math.random();
-    
+
     // As Espadas defendem e bloqueiam o evento!
     if (player.protecaoEspadas > 0) {
         player.protecaoEspadas--;
@@ -868,7 +1014,7 @@ function dispararEventoAleatorio() {
         clearInterval(idleTimer);
         showDialog(`Um valentão saltou das sombras, mas as <b>Espadas da Luz Reveladora</b> formaram uma barreira intransponível! Ele fugiu cego.<br><br><i>(Cargas restantes: ${player.protecaoEspadas})</i>`, imgs.bg_academy);
         renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Continuar</button>`);
-        return true; 
+        return true;
     }
 
     if (chance < 0.6) return false;
@@ -878,7 +1024,7 @@ function dispararEventoAleatorio() {
 
     // Usa o maior status (ATK ou INT) como base para não punir quem foca nos estudos
     let baseStatus = Math.max(player.atk, player.int);
-    
+
     // O poder do oponente escala com o progresso do jogador
     dueloAtual.poderOponente = 15 + (player.mes * 10) + (player.semana * 5) + Math.floor(Math.random() * 20);
     dueloAtual.poderJogador = baseStatus;
@@ -898,14 +1044,14 @@ function dispararEventoAleatorio() {
 
 function renderizarMesaAposta() {
     let botoesMao = '<div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">';
-    
+
     // Converte as cartas da mão em imagens para a mesa
     player.reliquias.forEach((relId, index) => {
         let item = lojaItens.find(i => i.id === relId);
         if (!item) return;
-        
+
         let imgUrl = item.img || 'assets/images/pxArt.png';
-        
+
         if (item.id === 'forca_espelho') {
             botoesMao += `
             <div onclick="usarArmadilhaAposta(${index})" style="cursor: pointer; position: relative; width: 45px; height: 65px; border: 2px solid #bc1c6c; border-radius: 4px;">
@@ -924,7 +1070,7 @@ function renderizarMesaAposta() {
 
     let custoFuga = 15 + (player.mes * 20);
 
-    let btnBatalha = dueloAtual.poderJogador >= dueloAtual.poderOponente 
+    let btnBatalha = dueloAtual.poderJogador >= dueloAtual.poderOponente
         ? `<button onclick="resolverDueloAposta(true)" class="btn-success">Atacar e Vencer! (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`
         : `<button onclick="resolverDueloAposta(false)" class="btn-danger">Tentar a Sorte (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`;
 
@@ -942,14 +1088,14 @@ function renderizarMesaAposta() {
 function queimarCartaAposta(index) {
     player.reliquias.splice(index, 1);
     dueloAtual.poderJogador += 20;
-    
+
     updateHUD();
     renderizarMao();
-    
+
     let htmlAtual = ui.dialog.innerHTML;
     let novoTexto = htmlAtual.replace(/Seu Poder: <span style="color:var\(--success\)">\d+<\/span>/, `Seu Poder: <span style="color:var(--success)">${dueloAtual.poderJogador}</span>`);
     ui.dialog.innerHTML = novoTexto;
-    
+
     renderizarMesaAposta();
 }
 
@@ -958,9 +1104,9 @@ function usarArmadilhaAposta(index) {
     updateHUD();
     renderizarMao();
     showDialog(`<b>MESA VIRADA!</b><br>Você ativou a <b>Força Espelho</b>! O ataque do oponente foi refletido de volta para ele. Vitória Imediata!`, imgs.duel);
-    
+
     // Atraso sutil para o jogador ler o texto antes de abrir o modal Zelda
-    setTimeout(ganharDueloAposta, 1500); 
+    setTimeout(ganharDueloAposta, 1500);
 }
 
 function resolverDueloAposta(venceu) {
@@ -984,7 +1130,7 @@ function entregarCartaValentao() {
     let index = Math.floor(Math.random() * player.reliquias.length);
     let cartaId = player.reliquias.splice(index, 1)[0];
     let item = lojaItens.find(i => i.id === cartaId);
-    
+
     updateHUD();
     renderizarMao();
     showDialog(`Você entregou a carta <b>${item.nome}</b> para ele. O valentão riu e foi embora. Sua dignidade foi ferida, mas seus Pontos de Vida estão intactos.`, imgs.threat);
@@ -1032,14 +1178,14 @@ function ganharDueloAposta() {
     let item = dueloAtual.recompensa;
     player.reliquias.push(item.id);
     registrarDesbloqueio(item.id);
-    
+
     let dpGanha = 40 * player.mes;
     player.dp += dpGanha;
-    
+
     updateHUD();
     renderizarMao();
     autoSave();
-    
+
     mostrarRecompensaZelda(item, `Saque de Batalha!<br><br>Você também recuperou <b>🪙 ${dpGanha} DP</b> do valentão.`);
 }
 

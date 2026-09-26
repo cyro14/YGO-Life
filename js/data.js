@@ -18,21 +18,31 @@ const imgs = {
 };
 
 const decksIniciais = [
-    { id: 'hero', nome: 'Herói Elementar', baseAtk: 5, baseInt: 5, hp: 3, emoji: '🦸' },
-    { id: 'roid', nome: 'Veículos Roid', baseAtk: 3, baseInt: 3, hp: 4, emoji: '🚁' },
-    { id: 'koala', nome: 'Bestas da Floresta', baseAtk: 8, baseInt: 2, hp: 3, emoji: '🐺' }
+    { id: 'hero', nome: 'Heróis Elementares', emoji: '🦸‍♂️', baseAtk: 15, baseInt: 5, hp: 4, padrao: true },
+    { id: 'roid', nome: 'Veicroids', emoji: '🚁', baseAtk: 10, baseInt: 10, hp: 5, padrao: true },
+    { id: 'koala', nome: 'Koalas', emoji: '🐨', baseAtk: 12, baseInt: 8, hp: 4, padrao: true },
+    
+    // NOVO DECK BLOQUEADO
+    { id: 'ojama', nome: 'Ojamas', emoji: '🩲', baseAtk: 5, baseInt: 20, hp: 6, padrao: false, dica: "Derrote Chazz Princeton no Duelo de Aposta." }
 ];
 
 const asesIniciais = [
-    { id: 'avian', deckReq: 'hero', nome: 'E-Hero Avian', desc: 'Bônus passivo: +10% de ganho de INT.', img: 'assets/images/avian.png'},
-    { id: 'gyroid', deckReq: 'roid', nome: 'Gyroid', desc: 'Bônus passivo: Reduz o custo da Loja em 10%.', img: 'assets/images/gyroid.jpeg' },
-    { id: 'koala', deckReq: 'koala', nome: 'Des Koala', desc: 'Bônus passivo: +5 DP fixos a cada duelo ganho no idle.', img: 'assets/images/des_koala.png' }
+    { id: 'avian', deckReq: 'hero', nome: 'E-Hero Avian', desc: 'Feather Shot: Ative para vencer um valentão automaticamente. 3 ativações por ano.', padrao: true, img: 'assets/images/avian.png'},
+    { id: 'gyroid', deckReq: 'roid', nome: 'Gyroid', desc: 'Resiliência: 1 vez por mês, você não perde HP ao ser derrotado por um valentão.', padrao: true, img: 'assets/images/gyroid.jpeg' },
+    { id: 'koala', deckReq: 'koala', nome: 'Des Koala', desc: 'Intimidação Fofa: Diminui o poder de todos os valentões em 20%.', padrao: true, img: 'assets/images/des_koala.png' },
+    { id: 'ojama_amarelo', deckReq: 'ojama', nome: 'Ojama Amarelo', desc: 'Distração Irritante: Pagar DP para fugir de duelos custa 50% menos.', padrao: true, img: 'assets/images/ojama_yellow.jpeg' }
 ];
 
 const espiritosIniciais = [
     { id: 'kuriboh', nome: 'Kuriboh', img: 'assets/images/kuriboh.png', desc: 'Pode te salvar de um golpe fatal.' },
     { id: 'ojama', nome: 'Ojama Amarelo',img: 'assets/images/ojama_yellow.jpeg', desc: 'Gera DP extra (quando não está reclamando).' },
-    { id: 'mokey', nome: 'Mokey Mokey', img: 'assets/images/mokey_mokey.png', desc: 'Bônus massivo de INT após perder HP.' }
+    { id: 'mokey', nome: 'Mokey Mokey', img: 'assets/images/mokey_mokey.png', desc: 'Bônus massivo de INT após perder HP.' },
+    
+    // NOVO ESPÍRITO BLOQUEADO
+    { id: 'kuriboh_alado', nome: 'Kuriboh Alado', img: 'assets/images/pxArt.png', desc: 'Evita a 1ª derrota fatal no mês.', padrao: false, dica: "Amizade máxima com Jaden"  },
+    { id: 'des_sapo', nome: 'Des Sapo', img: 'assets/images/pxArt.png', desc: '+15 DP semanais (Mesada).', padrao: false, dica: "Chegue ao Rá Amarelo com o deck Koala"  },
+    { id: 'gato_resgate', nome: 'Gato de Resgate', img: 'assets/images/pxArt.png', desc: 'Chance de recuperar 1 HP ao sofrer dano de emboscada.', padrao: false, dica: "Primeira eliminação na acedemia"  },
+    { id: 'jinzo', nome: 'Jinzo', img: 'assets/images/pxArt.png', desc: 'Ignora todas as penalidades de emboscadas.', padrao: false, dica: "Derrote Jinzo no mapa noturno." }
 ];
 
 const diasDaSemana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
@@ -182,7 +192,7 @@ const puzzlesExame = {
                 { texto: "Esperar a fase final dele", stat: 'int', req: 0, correto: false, msg: "Você hesitou demais. As fórmulas de Bastion limparam seu campo antes do seu turno!" }
             ]
         },
-        beast: {
+        koala: {
             texto: "Bastion ativou 'Cilindro Mágico' no seu ataque principal! Você está prestes a tomar o reflexo do próprio dano, mas tem efeitos feras engatilhados.",
             opcoes: [
                 { texto: "Invocar Babuíno Verde em resposta (Exige 250 ATK)", stat: 'atk', req: 250, correto: true, msg: "O rugido do Babuíno Verde cancelou a armadilha com pura brutalidade física, despedaçando o campo de Bastion!" },

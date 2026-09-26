@@ -956,6 +956,8 @@ function processarFimDoDia() {
         if (player.semana > 4) {
             player.semana = 1;
             player.mes++;
+            // ---> RECARGA MENSAL DO GYROID <---
+            player.gyroidUsadoMes = false;
             if (player.mes > 3) {
                 return iniciarExameFinal();
             }
@@ -1029,6 +1031,11 @@ function dispararEventoAleatorio() {
     dueloAtual.poderOponente = 15 + (player.mes * 10) + (player.semana * 5) + Math.floor(Math.random() * 20);
     dueloAtual.poderJogador = baseStatus;
 
+    // EFEITO KOALA: Intimidação Fofa (-20% de poder inimigo)
+    if (player.ace === 'koala') {
+        dueloAtual.poderOponente = Math.floor(dueloAtual.poderOponente * 0.8);
+    }
+
     // Sorteia a recompensa (uma carta da loja)
     let poolCartas = lojaItens.filter(i => i.tipo === 'reliquia_real');
     dueloAtual.recompensa = poolCartas[Math.floor(Math.random() * poolCartas.length)];
@@ -1070,6 +1077,20 @@ function renderizarMesaAposta() {
 
     let custoFuga = 15 + (player.mes * 20);
 
+    // EFEITO OJAMA AMARELO: Distração Irritante (50% de desconto para fugir)
+    if (player.ace === 'ojama_amarelo') {
+        custoFuga = Math.floor(custoFuga / 2);
+    }
+
+    // EFEITO AVIAN: Tiro de Penas
+    if (player.ace === 'avian' && player.cargasAvian > 0) {
+        botoesMao += `
+        <div onclick="usarEfeitoAvian()" style="cursor: pointer; position: relative; width: 45px; height: 65px; border: 2px solid #f1c40f; border-radius: 4px; display:flex; align-items:center; justify-content:center; background:#111;">
+            <span style="font-size:24px;">🌪️</span>
+            <div style="position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: #f1c40f; color: #000; font-size: 8px; padding: 2px 4px; border-radius: 3px; font-weight: bold; z-index: 2; white-space: nowrap;">${player.cargasAvian} USOS</div>
+        </div>`;
+    }
+
     let btnBatalha = dueloAtual.poderJogador >= dueloAtual.poderOponente
         ? `<button onclick="resolverDueloAposta(true)" class="btn-success">Atacar e Vencer! (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`
         : `<button onclick="resolverDueloAposta(false)" class="btn-danger">Tentar a Sorte (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`;
@@ -1083,6 +1104,13 @@ function renderizarMesaAposta() {
             <button onclick="fugirDueloAposta(${custoFuga})" style="background:#f39c12">Pagar ${custoFuga} DP e Evitar Duelo</button>
         </div>
     `);
+}
+
+function usarEfeitoAvian() {
+    player.cargasAvian--;
+    updateHUD();
+    showDialog(`<b>TIRO DE PENAS!</b><br>O <b>E-Hero Avian</b> desceu dos céus e nocauteou o valentão com um vendaval! Vitória Imediata!`, imgs.duel);
+    setTimeout(ganharDueloAposta, 1500); 
 }
 
 function queimarCartaAposta(index) {
@@ -1138,6 +1166,15 @@ function entregarCartaValentao() {
 }
 
 function sofrerDanoValentao() {
+
+    // EFEITO GYROID: Resiliência (Evita perder HP 1x por mês)
+    if (player.ace === 'gyroid' && !player.gyroidUsadoMes) {
+        player.gyroidUsadoMes = true;
+        showDialog(`<b>RESILIÊNCIA RÓID!</b><br>O valentão desferiu o golpe final, mas o <b>Gyroid</b> bloqueou o ataque com suas hélices! Você escapou com seus Pontos de Vida intactos.`, imgs.duel);
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Avançar</button>`);
+        return;
+    }
+
     player.hp--;
     updateHUD();
     showDialog(`<span style="color:var(--danger)"><b>DERROTA!</b></span><br>Você se recusou a ceder ou não tinha nada. Levou uma surra do valentão e perdeu <b>1 HP</b> pelo desgaste.`, imgs.threat);
@@ -1484,6 +1521,9 @@ function resolverPuzzleExame(anoExame, deckId, opcIndex) {
         player.mes = 1;
         player.semana = 1;
         player.diaIndex = 0;
+
+        // ---> RECARGA ANUAL DO AVIAN <---
+        player.cargasAvian = 3;
 
         // Progressão de Dormitório
         if (player.ano === 2) player.dormitorio = "Rá Amarelo";

@@ -169,12 +169,15 @@ function iniciarCriacaoNovoJogo(slot) {
 }
 
 function travarMenu(travado) {
-    let btnHome = document.getElementById('btn-home');
-    if (btnHome) {
-        btnHome.disabled = travado;
-        btnHome.style.opacity = travado ? '0.3' : '1';
-        btnHome.style.cursor = travado ? 'not-allowed' : 'pointer';
-    }
+    // Bloqueia Voltar, Inventário e Social de uma vez
+    ['btn-home', 'btn-inv', 'btn-soc'].forEach(id => {
+        let btn = document.getElementById(id);
+        if (btn) {
+            btn.disabled = travado;
+            btn.style.opacity = travado ? '0.3' : '1';
+            btn.style.cursor = travado ? 'not-allowed' : 'pointer';
+        }
+    });
 }
 
 let abaColecaoAtual = 'cartas';
@@ -894,42 +897,55 @@ function dispararEventoAleatorio() {
 }
 
 function renderizarMesaAposta() {
-    let botoesMao = '';
+    let botoesMao = '<div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">';
     
-    // Desenha os botões para as cartas na mão
+    // Converte as cartas da mão em imagens para a mesa
     player.reliquias.forEach((relId, index) => {
         let item = lojaItens.find(i => i.id === relId);
         if (!item) return;
-
+        
+        let imgUrl = item.img || 'assets/images/pxArt.png';
+        
         if (item.id === 'forca_espelho') {
-            botoesMao += `<button onclick="usarArmadilhaAposta(${index})" style="background:#bc1c6c; color: white; border-color: #fff; margin-bottom:5px; width: 100%;">Ativar: Força Espelho (Vitória Imediata)</button>`;
+            botoesMao += `
+            <div onclick="usarArmadilhaAposta(${index})" style="cursor: pointer; position: relative; width: 45px; height: 65px; border: 2px solid #bc1c6c; border-radius: 4px;">
+                <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: #bc1c6c; color: #fff; font-size: 8px; padding: 2px 4px; border-radius: 3px; font-weight: bold; z-index: 2;">WIN</div>
+            </div>`;
         } else if (item.subTipo === 'magia_normal') {
-            botoesMao += `<button onclick="queimarCartaAposta(${index})" style="background:#009966; color:white; margin-bottom:5px; width: 100%;">Descartar ${item.nome} (+20 Poder)</button>`;
+            botoesMao += `
+            <div onclick="queimarCartaAposta(${index})" style="cursor: pointer; position: relative; width: 45px; height: 65px; border: 2px solid #009966; border-radius: 4px;">
+                <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: #009966; color: #fff; font-size: 8px; padding: 2px 4px; border-radius: 3px; font-weight: bold; z-index: 2; white-space: nowrap;">+20 ⚡</div>
+            </div>`;
         }
     });
+    botoesMao += '</div>';
+
+    let custoFuga = 15 + (player.mes * 20);
 
     let btnBatalha = dueloAtual.poderJogador >= dueloAtual.poderOponente 
         ? `<button onclick="resolverDueloAposta(true)" class="btn-success">Atacar e Vencer! (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`
-        : `<button onclick="resolverDueloAposta(false)" class="btn-danger">Arriscar Derrota (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`;
+        : `<button onclick="resolverDueloAposta(false)" class="btn-danger">Tentar a Sorte (${dueloAtual.poderJogador} vs ${dueloAtual.poderOponente})</button>`;
 
     renderButtons(`
-        <div style="font-size: 14px; margin-bottom: 10px; color: var(--gold); font-weight: bold; text-align: center;">Mesa de Estratégia</div>
-        ${botoesMao}
-        <hr style="border-color:#444; margin: 10px 0;">
-        ${btnBatalha}
-        <button onclick="fugirDueloAposta()" style="background:#f39c12">Fugir e perder 1 HP</button>
+        <div style="font-size: 11px; margin-bottom: 12px; color: var(--gold); text-align: center;">Clique para sacrificar cartas:</div>
+        ${player.reliquias.length > 0 ? botoesMao : '<div style="text-align:center; font-size: 11px; color: #666;">Sua mão está vazia.</div>'}
+        <hr style="border-color:#444; margin: 15px 0 10px 0;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+            ${btnBatalha}
+            <button onclick="fugirDueloAposta(${custoFuga})" style="background:#f39c12">Pagar ${custoFuga} DP e Evitar Duelo</button>
+        </div>
     `);
 }
 
 function queimarCartaAposta(index) {
-    // Consome a carta da mão para dar um boost imediato de +20 Poder na aposta
     player.reliquias.splice(index, 1);
     dueloAtual.poderJogador += 20;
     
     updateHUD();
     renderizarMao();
     
-    // Atualiza o texto do diálogo e os botões em tempo real
     let htmlAtual = ui.dialog.innerHTML;
     let novoTexto = htmlAtual.replace(/Seu Poder: <span style="color:var\(--success\)">\d+<\/span>/, `Seu Poder: <span style="color:var(--success)">${dueloAtual.poderJogador}</span>`);
     ui.dialog.innerHTML = novoTexto;
@@ -941,20 +957,75 @@ function usarArmadilhaAposta(index) {
     player.reliquias.splice(index, 1);
     updateHUD();
     renderizarMao();
-    showDialog(`<b>MESA VIRADA!</b><br>Você ativou a <b>Força Espelho</b>! O ataque do oponente foi refletido de volta para ele. Você venceu a aposta independentemente da diferença de poder!`, imgs.duel);
-    ganharDueloAposta();
+    showDialog(`<b>MESA VIRADA!</b><br>Você ativou a <b>Força Espelho</b>! O ataque do oponente foi refletido de volta para ele. Vitória Imediata!`, imgs.duel);
+    
+    // Atraso sutil para o jogador ler o texto antes de abrir o modal Zelda
+    setTimeout(ganharDueloAposta, 1500); 
 }
 
 function resolverDueloAposta(venceu) {
     if (venceu) {
-        showDialog(`<span style="color:var(--success)"><b>VITÓRIA TÁTICA!</b></span><br>Seus ${dueloAtual.poderJogador} de Poder superaram a defesa do adversário! Ele entregou o prêmio furioso.`, imgs.duel);
-        ganharDueloAposta();
+        showDialog(`<span style="color:var(--success)"><b>VITÓRIA TÁTICA!</b></span><br>Seus ${dueloAtual.poderJogador} de Poder esmagaram o adversário!`, imgs.duel);
+        setTimeout(ganharDueloAposta, 1000); // Mostra o Modal Zelda logo depois
     } else {
-        player.hp--;
-        showDialog(`<span style="color:var(--danger)"><b>DERROTA!</b></span><br>Sua força não foi suficiente. Ele esmagou seus monstros e você perdeu <b>1 HP</b> pelo desgaste da aposta.`, imgs.threat);
-        updateHUD();
-        checarMorteDuelo();
+        if (player.reliquias.length > 0) {
+            showDialog(`<span style="color:var(--danger)"><b>DERROTA!</b></span><br>Sua força não foi suficiente. O valentão agarra você pelo colarinho: "Me entregue uma carta sua, ou você vai apanhar!"`, imgs.threat);
+            renderButtons(`
+                <button onclick="entregarCartaValentao()" style="background:#8e44ad">Entregar 1 carta aleatória (Salvar HP)</button>
+                <button onclick="sofrerDanoValentao()" class="btn-danger">Recusar e levar a surra (Perder 1 HP)</button>
+            `);
+        } else {
+            sofrerDanoValentao();
+        }
     }
+}
+
+function entregarCartaValentao() {
+    let index = Math.floor(Math.random() * player.reliquias.length);
+    let cartaId = player.reliquias.splice(index, 1)[0];
+    let item = lojaItens.find(i => i.id === cartaId);
+    
+    updateHUD();
+    renderizarMao();
+    showDialog(`Você entregou a carta <b>${item.nome}</b> para ele. O valentão riu e foi embora. Sua dignidade foi ferida, mas seus Pontos de Vida estão intactos.`, imgs.threat);
+    renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Avançar</button>`);
+}
+
+function sofrerDanoValentao() {
+    player.hp--;
+    updateHUD();
+    showDialog(`<span style="color:var(--danger)"><b>DERROTA!</b></span><br>Você se recusou a ceder ou não tinha nada. Levou uma surra do valentão e perdeu <b>1 HP</b> pelo desgaste.`, imgs.threat);
+    checarMorteDuelo();
+}
+
+function fugirDueloAposta(custo) {
+    if (player.dp >= custo) {
+        player.dp -= custo;
+        updateHUD();
+        showDialog(`Você jogou <b>${custo} DP</b> no chão. Enquanto ele catava as moedas, você escapou ileso.`, imgs.threat);
+        renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Avançar</button>`);
+    } else {
+        showDialog(`Você não tem os ${custo} DP! O valentão percebeu que você está blefando e avançou para o ataque!`, imgs.threat);
+        resolverDueloAposta(false); // Força a derrota automaticamente
+    }
+}
+
+function checarMorteDuelo() {
+    if (player.hp <= 0) checarMorte();
+    else renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Lamber as feridas e continuar</button>`);
+}
+
+// --- SISTEMA DE RECOMPENSA ZELDA ---
+function mostrarRecompensaZelda(item, extraMsg = "") {
+    document.getElementById('rec-img').src = item.img || 'assets/images/pxArt.png';
+    document.getElementById('rec-titulo').innerText = `Você obteve: ${item.nome}!`;
+    document.getElementById('rec-desc').innerHTML = extraMsg;
+    document.getElementById('modal-recompensa').style.display = 'flex';
+}
+
+function fecharRecompensa() {
+    document.getElementById('modal-recompensa').style.display = 'none';
+    iniciarIdleLoop();
 }
 
 function ganharDueloAposta() {
@@ -969,20 +1040,7 @@ function ganharDueloAposta() {
     renderizarMao();
     autoSave();
     
-    ui.dialog.innerHTML += `<br><br><b>Recompensas Adquiridas:</b><br>🎴 Carta: ${item.nome}<br>🪙 ${dpGanha} DP`;
-    renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-success">Guardar recompensas e continuar</button>`);
-}
-
-function fugirDueloAposta() {
-    player.hp--;
-    updateHUD();
-    showDialog(`Você não quis arriscar suas cartas e fugiu covardemente da aposta. O estresse de ser perseguido te fez perder 1 HP.`, imgs.threat);
-    checarMorteDuelo();
-}
-
-function checarMorteDuelo() {
-    if (player.hp <= 0) checarMorte(); // Usa a função de morte padrão
-    else renderButtons(`<button onclick="iniciarIdleLoop()" class="btn-primary">Lamber as feridas e continuar</button>`);
+    mostrarRecompensaZelda(item, `Saque de Batalha!<br><br>Você também recuperou <b>🪙 ${dpGanha} DP</b> do valentão.`);
 }
 
 function eventoAulaSexta() {

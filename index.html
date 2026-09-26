@@ -38,35 +38,52 @@
         </div>
 
         <!-- 3. MODAL DE COLEÇÕES -->
-    <div id="modal-colecoes" style="display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: #111; border: 3px solid #8e44ad; border-radius: 10px; z-index: 210; box-sizing: border-box; flex-direction: column;">
-        
-        <!-- Cabeçalho -->
-        <div style="background: #8e44ad; color: white; padding: 12px 15px; text-align: center; font-weight: bold; border-radius: 7px 7px 0 0; display: flex; justify-content: space-between; align-items: center;">
-            <span>📚 Enciclopédia de Duelista</span>
-            <span id="dex-progresso" style="font-size: 13px;">0/0</span>
+        <div id="modal-colecoes"
+            style="display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: #111; border: 3px solid #8e44ad; border-radius: 10px; z-index: 210; box-sizing: border-box; flex-direction: column;">
+
+            <!-- Cabeçalho -->
+            <div
+                style="background: #8e44ad; color: white; padding: 12px 15px; text-align: center; font-weight: bold; border-radius: 7px 7px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <span>📚 Enciclopédia de Duelista</span>
+                <span id="dex-progresso" style="font-size: 13px;">0/0</span>
+            </div>
+
+            <!-- Abas de Categorias -->
+            <div style="display: flex; background: #222; border-bottom: 2px solid #8e44ad;">
+                <button onclick="renderizarAbaColecao('cartas')" id="aba-col-cartas"
+                    style="flex:1; border:none; background:#8e44ad; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">🎴
+                    Cartas</button>
+                <button onclick="renderizarAbaColecao('lanches')" id="aba-col-lanches"
+                    style="flex:1; border:none; background:#333; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">🥪
+                    Lanches</button>
+                <button onclick="renderizarAbaColecao('personagens')" id="aba-col-personagens"
+                    style="flex:1; border:none; background:#333; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">👥
+                    Parceiros</button>
+                <button onclick="renderizarAbaColecao('decks')" id="aba-col-decks"
+                    style="flex:1; border:none; background:#333; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">🗃️
+                    Decks</button>
+            </div>
+
+            <!-- Conteúdo Dinâmico (Grid de itens) -->
+            <div id="colecoes-conteudo"
+                style="flex-grow: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start;">
+            </div>
+
+            <button onclick="fecharColecoes()" class="btn-primary"
+                style="margin: 10px; border-radius: 5px; background: #555;">Voltar ao Menu</button>
         </div>
 
-        <!-- Abas de Categorias -->
-        <div style="display: flex; background: #222; border-bottom: 2px solid #8e44ad;">
-            <button onclick="renderizarAbaColecao('cartas')" id="aba-col-cartas" style="flex:1; border:none; background:#8e44ad; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">🎴 Cartas</button>
-            <button onclick="renderizarAbaColecao('lanches')" id="aba-col-lanches" style="flex:1; border:none; background:#333; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">🥪 Lanches</button>
-            <button onclick="renderizarAbaColecao('personagens')" id="aba-col-personagens" style="flex:1; border:none; background:#333; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">👥 Parceiros</button>
-            <button onclick="renderizarAbaColecao('decks')" id="aba-col-decks" style="flex:1; border:none; background:#333; font-size:12px; padding: 10px; cursor:pointer; color:#fff;">🗃️ Decks</button>
+        <!-- 4. MODAL DE ZOOM / INSPEÇÃO DA COLEÇÃO -->
+        <div id="modal-dex-zoom"
+            style="display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 280px; background: #1a1a1a; border: 2px solid #8e44ad; border-radius: 8px; z-index: 220; padding: 15px; box-sizing: border-box; flex-direction: column; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.9);">
+            <img id="zoom-dex-img" src=""
+                style="width: 120px; height: 160px; object-fit: cover; margin: 0 auto 10px; border-radius: 4px; border: 2px solid #8e44ad;">
+            <h3 id="zoom-dex-nome" style="margin: 0 0 5px; color: var(--gold); font-size: 15px;">???</h3>
+            <p id="zoom-dex-desc" style="font-size: 12px; color: #ccc; margin-bottom: 15px;">Item bloqueado ou sem
+                descrição.</p>
+            <button onclick="fecharZoomDex()"
+                style="background: #8e44ad; padding: 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; color: white;">Fechar</button>
         </div>
-
-        <!-- Conteúdo Dinâmico (Grid de itens) -->
-        <div id="colecoes-conteudo" style="flex-grow: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start;"></div>
-
-        <button onclick="fecharColecoes()" class="btn-primary" style="margin: 10px; border-radius: 5px; background: #555;">Voltar ao Menu</button>
-    </div>
-
-    <!-- 4. MODAL DE ZOOM / INSPEÇÃO DA COLEÇÃO -->
-    <div id="modal-dex-zoom" style="display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 280px; background: #1a1a1a; border: 2px solid #8e44ad; border-radius: 8px; z-index: 220; padding: 15px; box-sizing: border-box; flex-direction: column; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.9);">
-        <img id="zoom-dex-img" src="" style="width: 120px; height: 160px; object-fit: cover; margin: 0 auto 10px; border-radius: 4px; border: 2px solid #8e44ad;">
-        <h3 id="zoom-dex-nome" style="margin: 0 0 5px; color: var(--gold); font-size: 15px;">???</h3>
-        <p id="zoom-dex-desc" style="font-size: 12px; color: #ccc; margin-bottom: 15px;">Item bloqueado ou sem descrição.</p>
-        <button onclick="fecharZoomDex()" style="background: #8e44ad; padding: 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; color: white;">Fechar</button>
-    </div>
 
         <!-- Tela de Criação -->
         <div id="screen-creation" class="screen" style="display: none;">
@@ -115,10 +132,10 @@
             <span class="hud-dp">🪙 DP: <span id="v-dp">0</span></span>
             <span class="hud-atk">⚔️ ATK: <span id="v-atk">0</span></span>
             <span class="hud-int">🧠 INT: <span id="v-int">0</span></span>
-            <button onclick="abrirInventario()"
+            <button id="btn-inv" onclick="abrirInventario()"
                 style="padding: 5px 10px; font-size: 12px; background: #8e44ad; margin-left: auto;">🎒
                 Inventário</button>
-            <button onclick="abrirSocial()"
+            <button id="btn-soc" onclick="abrirSocial()"
                 style="padding: 5px 10px; font-size: 12px; background: #e74c3c; margin-left: 5px;">🤝 Social</button>
             <button onclick="toggleFullScreen()"
                 style="padding: 5px 10px; font-size: 14px; background: #34495e; margin-left: 5px;"
@@ -164,13 +181,30 @@
         </div>
 
         <!-- Modal de Detalhes da Carta (Ao clicar na mão) -->
-        <div id="modal-carta" style="display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 280px; background: #111; border: 2px solid var(--gold); border-radius: 8px; z-index: 300; padding: 15px; box-sizing: border-box; flex-direction: column; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.9);">
-            <img id="detalhe-carta-img" src="" style="width: 140px; height: 204px; object-fit: cover; margin: 0 auto 15px; border-radius: 4px; border: 2px solid #555;">
+        <div id="modal-carta"
+            style="display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 280px; background: #111; border: 2px solid var(--gold); border-radius: 8px; z-index: 300; padding: 15px; box-sizing: border-box; flex-direction: column; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.9);">
+            <img id="detalhe-carta-img" src=""
+                style="width: 140px; height: 204px; object-fit: cover; margin: 0 auto 15px; border-radius: 4px; border: 2px solid #555;">
             <h3 id="detalhe-carta-nome" style="margin: 0 0 8px; color: var(--gold); font-size: 16px;">Nome</h3>
             <p id="detalhe-carta-desc" style="font-size: 13px; color: #ccc; margin-bottom: 20px;">Descrição da carta</p>
             <div id="detalhe-carta-acoes" style="display: flex; gap: 10px; justify-content: center;">
                 <!-- Botões de Ativar e Cancelar aparecerão aqui -->
             </div>
+        </div>
+
+        <!-- TELA DE RECOMPENSA -->
+        <div id="modal-recompensa"
+            style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 400; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white;">
+            <div style="animation: float 2s ease-in-out infinite;">
+                <img id="rec-img" src=""
+                    style="width: 140px; height: 204px; box-shadow: 0 0 40px var(--gold); border-radius: 6px; margin-bottom: 20px; border: 3px solid var(--gold);">
+            </div>
+            <h2 id="rec-titulo"
+                style="color: var(--gold); text-shadow: 0 0 15px var(--gold); margin: 0 0 10px; font-size: 26px;">Item
+                Obtido!</h2>
+            <p id="rec-desc" style="font-size: 14px; max-width: 80%; color: #ddd;"></p>
+            <button onclick="fecharRecompensa()" class="btn-success"
+                style="margin-top: 25px; padding: 10px 20px; font-size: 16px;">Guardar e Continuar</button>
         </div>
 
         <!-- Barra de Progresso do Dia -->
